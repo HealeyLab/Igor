@@ -1,86 +1,25 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 //Author: Dan Pollak
 //10/30/15
-Function Driver(file)
-	String file
-	
-	Make /D/O/N = (100, 2) myData //three d way with index, spont data, and current step data
-	
-	//file is always "root"
-	//spont files
-	//batch_discrim("spont", myData)
-	//print "did batch_discrim(spont)***************************************************************************************************"
-	//step files
-	batch_discrim("pa", myData)
-	
+
+Function driver_batch(w) // use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
+
+	Wave w
+	String waveName = NameofWave(w)
+	 //will need some sort of "data dump" wave, that will contain the name of the current wave and output of analysis functions 
+	//can then run a separate "sorter" script that will group data for each cell together, average duplicate trials, and return final average values   				
+	if (stringmatch(waveName, "spont")>0)
+		spontanalysis(w) //this function will need to be fixed, since it takes RMP as a user-calculated parameter
+	else
+		cstepanalysis(w) //function needs to be made 
+	endif	
+
 end
 //******************************************************************************************************************************
-
-//Function saveWaveAsText_batch(w)
-//Wave w
-//String name = nameofwave(w)
-//Save/J/W/P=IgorText 'w' as name
-//print name
-
-//End
-
-//store this procedure here:
-//C:\\Program Files (x86)\\WaveMetrics\\Igor Pro Folder\\Igor Procedures
-//for it to compile automatically
-//the spaces may cause a problem. Look into how to account for spaces when you do this.
-Function batch_discrim(fileNameDiscrim, myData)
-	String fileNameDiscrim
-	Wave myData
-	//string we search for to discriminate between files
-	//params: string selector, delimiter, option
-	variable ic//index for for loop
-		
-	//particular filename
-	String elem
-	if(StringMatch(FileNameDiscrim, "spont"))//fileNameDiscrim = spont, then do spont script
-		String spont_fileNames = WaveList("*spont*", ";", "");//itknows which wave because it is from current data folder
-		
-		variable itemsInSpontFileNames = ItemsInList(spont_fileNames, ";")//number of files in wavelist
-		
-		for(ic=0;ic<itemsInSpontFileNames;ic+=1)
-			//get name from file
-			elem = StringFromList(ic, spont_fileNames, ";")
-			//print "DJP3"
-			//convert elem to wave name
-			wave w = $elem
-			//perform operation on this SPONT file
-		
-			//takes a wave object as parameter to get a RMV
-			variable RMV = findRMV(w)
-			print RMV
-			//uses this RMV to get a wave
-			myData[ic][1] = SpikeDetection_batch(w, RMV)
-			
-		endfor	
-	endif
-		
-	
-	//perform operation on STEP file
-	if(StringMatch(fileNameDiscrim, "pa"))//fileNameDiscrim = spont, then do spont script	
-		String step_fileNames = WaveList("*Cell*pa*", ";", "")
-		
-		variable itemsInStepFileNames = ItemsInList(step_fileNames, ";")//num of files in wavelist
-		for(ic = 0; ic<itemsInStepFileNames; ic+=1)
-			//get name from file
-			elem = StringFromList(ic, step_fileNames, ";")
-			//convert elem to wave name
-			wave w = $elem 
-			
-			//perform operation on STEP file
-			print findSSV(w)
-			//myData[ic][2] = findSSV(w)
-		
-		endfor
-	endif
-	
-end
-//******************************************************************************************************
 //FIND RESTING MEMBRANE POTENTIAL
+
+// right now this code makes a new wave called restVals, which contains all values of the original wave that are between -90 and -50 mV
+// will not take into account subthreshold activity throwing off mean of these values 
 Function/D findRMV(w)
 	wave w
 	
@@ -91,7 +30,7 @@ Function/D findRMV(w)
 
 	
 	for(ic = 0; ic < numpnts(w) - 1; ic+=1)
-		if(w[ic] < maxMilliVolt && w[ic] > minMilliVolt)
+		if(w[ic] < maxMilliVolt && w[ic] > minMilliVolt)// && slope between w[ic] andw[ic+a few points] <some amount but > (-)someamount
 			restVals[ic] = w[ic]
 		endif
 	endfor
@@ -242,7 +181,7 @@ end
 
 //This function detects spikes using the threshold method and returns spike times, spike ampitudes, spike half-widths, AHP amplitude, and AHP half-width
 
-Function SpikeDetection_batch(w, RMP) 
+Function spontanalysis(w, RMP) 
 	Wave w
 	Variable RMP // resting potential (Volts)
 	Variable ReturnValue
