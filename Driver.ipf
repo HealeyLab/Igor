@@ -41,6 +41,7 @@ end
 //takes advantage of how negatice and positive steps tend to look diferent
 //if negative, will simply take the average
 //FIND STEADY STATE POTENTIAL
+
 Function/D findSSV(w)
 	wave w
 	variable output
@@ -197,14 +198,13 @@ Function spontanalysis(w, RMP)
 	Variable decayend
 	Variable decaytime
 	Variable i //current x position
-	
-	
+
+
 	
 	for (i=0;i<numpnts(w)-1;i+=1)
-		if (w[i]<Threshold && w[i+1]>=Threshold)
+		if (w[i]=<Threshold && w[i+1]>Threshold)
 			SpikeCount=SpikeCount+1
-			InsertPoints numpnts(SpikeTimes),1, SpikeTimes
-			SpikeTimes[numpnts(SpikeTimes)-1]=pnt2x(w,i)
+			
 			crossUpx=i	
 		endif
 		
@@ -212,11 +212,13 @@ Function spontanalysis(w, RMP)
 			crossDownx=i
 			WaveStats/Q/Z/R=[crossUpx, crossDownx] w // grabs wave portion between crossup and crossdown
 			Variable MaxY=V_max //finds maximum
+			InsertPoints numpnts(SpikeTimes),1,SpikeTimes
+			SpikeTimes[numpnts(SpikeTimes)-1]=MaxY			
 			Variable MaxYloc= x2pnt(w,V_maxloc) //converts maximum into point number
 			InsertPoints numpnts(SpikeAmplitudes),1, SpikeAmplitudes // adds point to output wave
 			SpikeAmplitudes[numpnts(SpikeAmplitudes)-1]=abs(MaxY-RMP)  // ^
 			Variable AHPwindow = MaxYloc+1000 //defines interval after peak (in points) to look for AHP
-			WaveStats/Q/Z/R=[MaxYloc, AHPwindow] w
+			WaveStats/Q/Z/R=[MaxYloc, AHPwindow] w //new wavestats for spike peak => ahp peak
 			Variable MinY=V_min
 			Decaystart = V_minloc
 			Variable MinYloc= x2pnt(w,V_minloc)
@@ -226,6 +228,7 @@ Function spontanalysis(w, RMP)
 			
 			variable a = MinYloc
 			variable b = 0
+			
 			Do
 				if (w[a]<=RMP && w[a+1]>RMP)
 				decayend= pnt2x(w, a)
@@ -239,7 +242,7 @@ Function spontanalysis(w, RMP)
 				
 				
 			
-			Variable halfheight = ((abs(MaxY))- ((abs(minY)))/2 //hafwidth calculation (voltage)
+			Variable halfheight = ((abs(MaxY))- ((abs(RMP))/2 //halfamplitude calculation (voltage)
 			variable h
 			for (h=minYloc;h>=MaxYloc;h-=1) 
 				if (w[h]<halfheight && w[h-1]>=halfheight)
