@@ -3,7 +3,6 @@
 //10/30/15
 
 Function driver_batch(w) // use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
-	test123
 	Wave w
 	String waveName = NameofWave(w)
 	 //will need some sort of "data dump" wave, that will contain the name of the current wave and output of analysis functions 
