@@ -5,12 +5,17 @@
 Function driver_batch(w) // use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
 	Wave w
 	String waveName = NameofWave(w)
-	 //will need some sort of "data dump" wave, that will contain the name of the current wave and output of analysis functions 
-	//can then run a separate "sorter" script that will group data for each cell together, average duplicate trials, and return final average values   				
+	Make O/T spontWaveNames
+	Make O/D spontData
+	Make O/T cStepWaveNames
+	Make O/D cStepData
 	if (stringmatch(waveName, "spont")>0)
+		Insertpoints numpnts(spontWaveNames),1,spontWaveNames	
 		spontanalysis(w) //this function will need to be fixed, since it takes RMP as a user-calculated parameter
 	else
+		Insertpoints numpnts(cStepWaveNames),1,cStepWaveNames
 		cstepanalysis(w) //function needs to be made 
+		
 	endif	
 
 end
