@@ -20,28 +20,36 @@ Function driver_batch(w) // use of *_batch here will allow us to use preexisting
 
 end
 //******************************************************************************************************************************
-//FIND RESTING MEMBRANE POTENTIAL
 
-// right now this code makes a new wave called restVals, which contains all values of the original wave that are between -90 and -50 mV
-// will not take into account subthreshold activity throwing off mean of these values 
-Function/D findRMV(w)
-	wave w
-	
-	Variable minMilliVolt = -.090
-	Variable maxMilliVolt = -.050
-	Make/O/D/N=(numpnts(w)) restVals
-	variable ic
+Function findRMV(w)
+        wave w
 
-	
-	for(ic = 0; ic < numpnts(w) - 1; ic+=1)
-		if(w[ic] < maxMilliVolt && w[ic] > minMilliVolt)// && slope between w[ic] andw[ic+a few points] <some amount but > (-)someamount
-			restVals[ic] = w[ic]
-		endif
-	endfor
-	
-	return mean(restVals)
-	
-end
+        Variable minVoltage = -.090 //lower limit for RMP
+        Variable maxVoltage = -.040 // upper limit for RMP
+        Duplicate/O w $"restVals"
+        Wave restVals
+        variable ic
+
+        for(ic = 0; ic < numpnts(w); ic+=1) // can set to 3 to 3.5 s (in points) for current step protocol
+                if(w[ic]<maxVoltage && w[ic] > minVoltage)
+                restVals[ic]=w[ic]
+                else
+                restVals[ic]=NaN
+                endif
+        endfor
+        
+        Duplicate/O restVals $"RMPWave"
+        Wave RMPWave
+        
+        Curvefit /NTHR=0 line restVals /D=RMPWave  // detects if 
+        
+        
+        if (abs(((RMPWave[numpnts(RMPWave)])-(RMPWave[0]))>.010)) 
+        	print "Error: Significant change in RMP" // detects if the starting and ending RMP are significantly different
+         	endif
+
+      end
+
 //************************************************
 //This function detects spikes using the threshold method and returns spike times, spike ampitudes, spike half-widths, AHP amplitude, and AHP half-width
 
