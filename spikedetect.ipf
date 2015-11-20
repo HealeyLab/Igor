@@ -1,4 +1,4 @@
-a rtGlobals=1		// Use modern global access method.
+#Pragma rtGlobals=1		// Use modern global access method.
 
 Function spontspikeAnalysis(w, ampThresh)
 		
@@ -17,10 +17,101 @@ End
 
 //*******************************************
 		
+
+
+//************************************************
+
+
+Function threshdetect(w) //wave "times" and wave "values" contain the timing and voltage values of the detected AP thresholds
+
+        Wave w
+        Differentiate w/D=diffWave
+        
+	Smooth 10, diffWave
+
+        
+        Wave diffWave
+        FindLevels/EDGE=1/M=.05/Q/DEST=threshTimes diffWave 5
+        	
+        
+        Make /O/D/N=(numpnts(threshTimes)) threshValues
+        variable pos
+        variable threshpoint
+        
+        for(pos=0;pos<=(numpnts(threshValues));pos+=1)
+        	threshpoint= x2pnt(w,threshTimes[pos])
+        	threshValues[pos]=w[threshpoint]
+        endfor
+        
+        variable i
+       
+       //get rid of detections resulting from noise
+        variable diff1point
+        variable diff2point
+        
+        Make/O/D/N=0 times
+        Make/O/D/N=0 values
+        
+        for (i=0;i<=(numpnts(threshTimes));i+=1)
+        	
+        	diff1point = x2pnt(diffWave, threshTimes[i])
+        	diff2point = diff1point + 15
+        	
+        	if(diffWave[diff2point]>20)
+        		print "true positive at"
+        		print threshTimes[i]
+        		print "second point derivative"
+        		print diffWave[diff2point]
+        		print "end"
+        		Insertpoints numpnts(times),1,times
+        		times[numpnts(times)]=threshTimes[i]
+        		Insertpoints numpnts(values),1,values
+        		variable valuefinder = x2pnt(w,times[numpnts(times)])
+        		values[numpnts(values)]=w[valuefinder]
+        		
+        		
+        		
+        		
+        	endif
+        endfor
+        		
+end
+
+//*************************************************
+
+Function findRMV(w) 
+        wave w 
+ 
+        Variable minVoltage = -.090 //lower limit for RMP 
+        Variable maxVoltage = -.040 // upper limit for RMP 
+        Duplicate/O w $"restVals" 
+        Wave restVals 
+        variable ic 
+ 
+        for(ic = 0; ic < numpnts(w); ic+=1) // can set to 3 to 3.5 s (in points) for current step protocol 
+                if(w[ic]<maxVoltage && w[ic] > minVoltage) 
+                restVals[ic]=w[ic] 
+                else 
+                restVals[ic]=NaN 
+                endif 
+        endfor 
+         
+        Duplicate/O restVals $"RMPWave" 
+        Wave RMPWave 
+         
+        Curvefit /NTHR=0 line restVals /D=RMPWave  
+         
+        if (abs(((RMPWave[numpnts(RMPWave)])-(RMPWave[0]))>.010))  
+                print "Error: Significant change in RMP" // detects if the starting and ending RMP are significantly different 
+                endif 
+ 
+      end
+      
 Function peakdetect(w,threshold)
 
         Wave w
         Variable threshold
+        Wave values = root:values
 
         FindLevels/Q/DEST=crosswave w threshold //finds x coordinate for where wave crosses threshold (up and down i.e. 2 spikes = 4 crossings)
 
@@ -50,52 +141,8 @@ Function peakdetect(w,threshold)
                 //print peaktime
                 Spikepeaks[pos]=peak
                 spiketimes[pos]=peaktime
-                spikeamps[pos]= peak -w[diffwavecrosswave[pos]]
+                spikeamps[pos]= peak - values[pos]
                 pos += 1
 
         endfor
 End
-
-//************************************************
-
-Function threshdetect(w)
-
-        Wave w
-        Differentiate w/D=diffWave
-        Wave diffWave
-        FindLevels/EDGE=1/M=.05/Q/DEST=diffWaveCrossWave diffWave 100
-
-End
-
-//*************************************************
-
-Function findRMV(w) 
-        wave w 
- 
-        Variable minVoltage = -.090 //lower limit for RMP 
-        Variable maxVoltage = -.040 // upper limit for RMP 
-        Duplicate/O w $"restVals" 
-        Wave restVals 
-        variable ic 
- 
-        for(ic = 0; ic < numpnts(w); ic+=1) // can set to 3 to 3.5 s (in points) for current step protocol 
-                if(w[ic]<maxVoltage && w[ic] > minVoltage) 
-                restVals[ic]=w[ic] 
-                else 
-                restVals[ic]=NaN 
-                endif 
-        endfor 
-         
-        Duplicate/O restVals $"RMPWave" 
-        Wave RMPWave 
-         
-        Curvefit /NTHR=0 line restVals /D=RMPWave  // detects if  
-         
-         
-        if (abs(((RMPWave[numpnts(RMPWave)])-(RMPWave[0]))>.010))  
-                print "Error: Significant change in RMP" // detects if the starting and ending RMP are significantly different 
-                endif 
- 
-      end
-
-
