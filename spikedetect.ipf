@@ -58,7 +58,8 @@ End
 
 //************************************************
 
-Function threshdetect(w)
+
+Function threshdetect(w) //wave "times" and wave "values" contain the timing and voltage values of the detected AP thresholds
 
         Wave w
         Differentiate w/D=diffWave
@@ -67,7 +68,7 @@ Function threshdetect(w)
 
         
         Wave diffWave
-        FindLevels/EDGE=1/M=.05/Q/DEST=threshTimes diffWave 15
+        FindLevels/EDGE=1/M=.05/Q/DEST=threshTimes diffWave 5
         	
         
         Make /O/D/N=(numpnts(threshTimes)) threshValues
@@ -85,25 +86,33 @@ Function threshdetect(w)
         variable diff1point
         variable diff2point
         
-        Duplicate/O threshTimes refinedThreshTimes1
-        
-        Duplicate/O threshValues refinedThreshValues1
+        Make/O/D/N=0 times
+        Make/O/D/N=0 values
         
         for (i=0;i<=(numpnts(threshTimes));i+=1)
+        	
         	diff1point = x2pnt(diffWave, threshTimes[i])
-        	diff2point = diff1point + 8
-        	print threshTimes[i]
-        	print diffWave[diff1point]
-        	print diffWave[diff2point]
-        	if(diffWave[diff2point]<15)
-        		DeletePoints i,1,refinedThreshTimes1
-        		DeletePoints i,1,refinedThreshValues1
+        	diff2point = diff1point + 15
+        	
+        	if(diffWave[diff2point]>20)
+        		print "true positive at"
+        		print threshTimes[i]
+        		print "second point derivative"
+        		print diffWave[diff2point]
+        		print "end"
+        		Insertpoints numpnts(times),1,times
+        		times[numpnts(times)]=threshTimes[i]
+        		Insertpoints numpnts(values),1,values
+        		variable valuefinder = x2pnt(w,times[numpnts(times)])
+        		values[numpnts(values)]=w[valuefinder]
+        		
+        		
+        		
         		
         	endif
         endfor
         		
 end
-
 
 //*************************************************
 
