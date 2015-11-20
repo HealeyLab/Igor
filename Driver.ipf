@@ -5,23 +5,50 @@
 Function driver_batch(w) // use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
 	Wave w
 	String waveName = NameofWave(w)
-	Make O/T spontWaveNames
-	Make O/D spontData
-	Make O/T cStepWaveNames
-	Make O/D cStepData
+	Make /O/T spontWaveNames
+	Make /O/D spontData
+	Make /O/T cStepWaveNames
+	Make /O/D cStepData
 	if (stringmatch(waveName, "spont")>0)
 		Insertpoints numpnts(spontWaveNames),1,spontWaveNames	
-		spontanalysis(w) //this function will need to be fixed, since it takes RMP as a user-calculated parameter
-	else
+		//spontanalysis(w) //this function will need to be fixed, since it takes RMP as a user-calculated parameter
+	elseif(stringmatch(waveName, "-")>0)
+	// bc all other cases of waves are NOT current steps, we need to discriminate further using this conditional
 		Insertpoints numpnts(cStepWaveNames),1,cStepWaveNames
-		cstepanalysis(w) //function needs to be made 
+		//cstepanalysis(w) //function needs to be made 
 		
 	endif	
 
 end
+//***************************************************************************************************************************
+Function/D findSSV(w)
+       wave w
+       Make/O/D/N=1 output
+       variable ic
+	
+	Make/O/D/N = (numpnts(w)) destWave
+	Differentiate w /D=destWave
+	Smooth 1, destwave
+	findLevels/DEST=leveledWave/M=(x2pnt(w, .010))/Q destWave 1
+	variable leveledWaveCount = 0
+	variable startTrial = x2pnt(w, 3)
+	variable endTrial = x2pnt(w, 3.5)
+	for(ic = startTrial; ic < endTrial; ic+=1)
+		if(ic == leveledWave[leveledWaveCount])
+			leveledWaveCount += 1//will go to check next value in leveledWave
+			ic += 50//skip ahead by however much
+		else
+			InsertPoints numpnts(output), 1, output
+			output[numpnts(output) - 1] = w[ic]
+		endif
+	endfor
+       
+       print mean(output)
+
+end
 //******************************************************************************************************************************
 
-Function findRMV(w)
+Function/D findRMV(w)
         wave w
 
         Variable minVoltage = -.090 //lower limit for RMP
@@ -47,7 +74,7 @@ Function findRMV(w)
         if (abs(((RMPWave[numpnts(RMPWave)])-(RMPWave[0]))>.010)) 
         	print "Error: Significant change in RMP" // detects if the starting and ending RMP are significantly different
          	endif
-
+	return (RMPWave[numpnts(RMPWave) - 1] + RMPWave[0]) / 2
       end
 
 //************************************************
@@ -74,11 +101,11 @@ Function spontanalysis(w, RMP)
 
 	
 	for (i=0;i<numpnts(w)-1;i+=1)
-		if (w[i]=<Threshold && w[i+1]>Threshold)
+		//if (w[i]=<Threshold && w[i+1]>Threshold)
 			SpikeCount=SpikeCount+1
 			
 			crossUpx=i	
-		endif
+		//endif
 		
 		if (w[i]>=Threshold && w[i+1]<Threshold)
 			crossDownx=i
