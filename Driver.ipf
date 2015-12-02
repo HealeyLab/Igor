@@ -21,14 +21,79 @@ Function driver_batch(w) // use of *_batch here will allow us to use preexisting
 
 end
 //***************************************************************************************************************************
+Function FIWaves(w)//root
+	//eventually, have it generate a wave per cell
+	wave w
+	String list = WaveList("*Cell*", ";", "")
+	//get list of cell nums, for elem in each, call fi curve on sublist
+	variable ic, listSize = itemsInList(list)
+	Make/O/T=2/N=0 cellNumbers//ie, Cell1, Cell2, Cell3, etc
+	for(ic = 0; ic < listSize - 14; ic +=1)
+		String currentItem = stringfromlist(ic, list)
+		variable cellPos  = strsearch(currentItem, "Cell", 0)//cell pos is literally the index where cell's c is in the string. will use that as reference point.
+
+		//Basically, the last part of the for loop is extracting the cell number. Here's how we do it:
+		//while next char is not ".", keep adding on to the number. It'll either be 1 or 2 digits long, but this will always work
+		//ex, if it is Cell15.50pa, it will add 1, then 5, to string cellNum, so it is 15.
+		variable i = 0
+		String cellNum = ""
+		do
+			cellNum += currentItem[cellPos + 4 + i]
+			i += 1
+		while(!stringmatch(currentItem[cellPos + 4 + i], "."))
+		InsertPoints numpnts(cellNumbers), 1, cellNumbers
+		cellNumbers[numpnts(cellNumbers) - 1] = cellNum
+	endfor
+
+	//now call FICurve on a custom list of strings corresponding to wves whose names contain "Cell" + cellNames[i]
+	for(ic = 0; ic < numpnts(cellNumbers); ic+=1)
+		String wName = "Cell" + cellNumbers[ic]
+		Make/O/D/N=0 $wName//for insertPoints
+		
+	endfor
+	
+end
+Function FICurve(sublist, wName)
+	String sublist
+	wave wName
+	//dont use wavelist here, its for current string
+	variable ic, spikes, currentInjected, FI, numNeg = 5//bc -50 -40 -30 -20 -10
+	String label
+	//NEG
+	for(ic = 0; ic < numNeg; ic+=1)
+		wave current = $stringfromlist(ic, sublist)
+		label = num2str((ic - 6) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
+		//FI is spikes over curr injected
+		spikes = spontanalysis(current, findRMV(current))
+		currentInjected = str2num(label)
+		FI = spikes / currentInjected
+		//Add to wave
+		InsertPoints numpnts(wName) , 1, wName
+		wName[numpnts(wName)] =FI
+	endfor
+	//POS
+	variable numPos = 10 //bc 0 1 2 3 4 5 6  7 8 9
+	for(ic = 0; ic < numPos; ic+=1)
+		wave current = $stringfromlist(ic, sublist)
+		label = num2str((ic) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
+		//FI is spikes over curr injected
+		spikes = spontanalysis(current, findRMV(current))
+		currentInjected = str2num(label)
+		FI = spikes / currentInjected
+		//Add to wave
+		InsertPoints numpnts(wName) , 1, wName
+		wName[numpnts(wName)] =FI
+	endfor
+end
+//***************************************************************************************************************************
 Function/D findSSV(w)
        wave w
        Make/O/D/N=1 output
        variable ic
 	
 	Make/O/D/N = (numpnts(w)) destWave
-	Differentiate w /D=destWave
-	Smooth 1, destwave
+	Differentiate w /D=destWave//differentiates wave, now its 0 when its a peak, pos when incr, neg when dec
+	Smooth 1, destwave//smoothed differentiated wave
 	findLevels/DEST=leveledWave/M=(x2pnt(w, .010))/Q destWave 1
 	variable leveledWaveCount = 0
 	variable startTrial = x2pnt(w, 3)
@@ -48,6 +113,7 @@ Function/D findSSV(w)
 end
 //******************************************************************************************************************************
 
+//*****************************************************************************************************************************
 Function/D findRMV(w)
         wave w
 
