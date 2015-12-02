@@ -45,11 +45,22 @@ Function FIWaves(w)//root
 		cellNumbers[numpnts(cellNumbers) - 1] = cellNum
 	endfor
 
-	//now call FICurve on a custom list of strings corresponding to wves whose names contain "Cell" + cellNames[i]
+	//now call FICurve on a custom list of strings corresponding to waves whose names contain "Cell" + cellNames[i]
 	for(ic = 0; ic < numpnts(cellNumbers); ic+=1)
 		String wName = "Cell" + cellNumbers[ic]
 		Make/O/D/N=0 $wName//for insertPoints
-		
+		variable jd
+		String sublist = ""
+		//making sublist 1; 2; 3
+		for(jd = 0; jd < listSize; i +=1)
+			if(stringmatch(stringfromlist(jd, list), "*Cell" + cellNumbers[ic] + "*"))
+				if(jd == listSize - 1)	
+					sublist += stringfromlist(jd, list)
+				else
+					sublist += stringfromlist(jd, list) + "; "
+			endif
+		end
+		FICurve(sublist, wName)//now wName is in the data browser w data in it.
 	endfor
 	
 end
