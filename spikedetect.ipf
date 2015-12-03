@@ -7,6 +7,7 @@ Function spontspikeAnalysis(w, ampThresh)
         findRMV(w)
         threshdetect(w) 
         peakdetect(w, AmpThresh)
+        graphWave(w)
         //to do:
         //ISI or spike rate
         
@@ -132,17 +133,18 @@ Function peakdetect(w,threshold)
         Make /O/D/N=(numspikes) halfwidths
         Wave times = root:times
         Make /O/D/N= (numspikes*2) halfwidthpointsAll
+        Make /O/D/N= (numspikes*2) halfwidthpointsAllvalues
 
         Variable peak
         Variable peaktime
         Variable peaktimepoint
         variable i
-        variable pos=0
+        variable pos=0 //effectively spike #, ie first spike pos = 0
         wave RMPWave = root:RMPWave
         variable amplitude
         variable halfamp
         variable halfampvoltage
-        variable halfwidthrightpos= 0 
+        variable halfwidthleftpos= 0 
        
         Wave diffWaveCrossWave //from threshdetect()
 
@@ -164,10 +166,13 @@ Function peakdetect(w,threshold)
                 AHP(pos,0.030,spiketimes[pos],w)
                 AHPcurvefit(w,AHPtimes[pos],pos)
                 Findlevels/Q/R=(times[pos],AHPtimes[pos])/DEST=halfwidthpoints w halfampvoltage // halfwidth finder
+                
                 halfwidths[pos] = halfwidthpoints[1]-halfwidthpoints[0]
-                halfwidthpointsAll[halfwidthrightpos] = halfwidthpoints[0]
-                halfwidthpointsAll[halfwidthrightpos+1]= halfwidthpoints[1]
-                halfwidthrightpos +=2
+                halfwidthpointsAll[halfwidthleftpos] = halfwidthpoints[0]
+                halfwidthpointsAll[halfwidthleftpos+1]= halfwidthpoints[1]
+                halfwidthpointsAllvalues[halfwidthleftpos] = halfampvoltage
+                halfwidthpointsAllvalues[halfwidthleftpos+1] = halfampvoltage
+                halfwidthleftpos +=2
                 pos+=1
                 
 
@@ -251,6 +256,23 @@ Function AHPCurvefit(w,peaktime, p)
 End
 
 
+Function graphWave(w)
+
+wave w
 
 //Display all calculations on top of source wave
-Display 'PMPulse_1_1_1_1_V-mon'; AppendToGraph spikepeaks vs spiketimes; AppendToGraph RMPWave; AppendToGraph AHPpeaks vs AHPtimes; AppendToGraph threshValues vs threshTimes; AppendToGraph AHPendvalues vs AHPendtimes
+Display w; AppendToGraph spikepeaks vs spiketimes; AppendToGraph values vs times; AppendToGraph AHPpeaks vs AHPtimes; AppendToGraph AHPendvalues vs AHPendtimes; AppendToGraph halfwidthpointsAllvalues vs halfwidthpointsAll
+
+// Use markers instead of lines
+
+ModifyGraph mode(spikepeaks)=3,marker(spikepeaks)=17;
+ModifyGraph rgb(spikepeaks)=(4369,4369,4369),mode(values)=3,marker(values)=32;
+ModifyGraph rgb(values)=(0,0,0),mode(AHPpeaks)=3,marker(AHPpeaks)=23;
+ModifyGraph rgb(AHPpeaks)=(4369,4369,4369),mode(AHPendvalues)=3;
+ModifyGraph marker(AHPendvalues)=46,rgb(AHPendvalues)=(0,0,0);
+ModifyGraph mode(halfwidthpointsAllvalues)=3,marker(halfwidthpointsAllvalues)=4;
+ModifyGraph rgb(halfwidthpointsAllvalues)=(0,0,0)
+
+TextBox/C/N=text0/F=0 nameofwave(w)
+
+End
