@@ -5,13 +5,26 @@ Function spontspikeAnalysis(w, ampThresh)
         Wave w
         Variable ampThresh
         findRMV(w)
-        threshdetect(w) //detects threshold for each spike
-        peakdetect(w, AmpThresh) //generates peak (x) wave and peak (y) wave
+        threshdetect(w) 
+        peakdetect(w, AmpThresh)
         //to do:
-        //half width
-        //AHPanalysis (amplitude, decay time)
-        //ISI/spike rate
-        //
+        //ISI or spike rate
+        
+        //graphall function to plot everything that the program calculated for this wave on top of the source wave
+        //graph can then be saved (w/wavename) so that user can visualy verify results 
+       
+        
+        // "stats" function, that calculates the mean and standard deviation of all the calculated values and then outputs them into the final results wave 
+       // threshold voltage
+       // spike amplitude
+       // spike half width
+       // AHP amplitude
+       // AHP duration
+       // spike rate
+       // ISI
+       // ISI standard deviation
+       // RMP
+       
         
 End
 
@@ -51,22 +64,14 @@ Function threshdetect(w) //wave "times" and wave "values" contain the timing and
         for (i=0;i<=(numpnts(threshTimes));i+=1)
             
             diff1point = x2pnt(diffWave, threshTimes[i])
-            diff2point = diff1point + 15
+            diff2point = diff1point + 30
             
             if(diffWave[diff2point]>20)
-                print "true positive at"
-                print threshTimes[i]
-                print "second point derivative"
-                print diffWave[diff2point]
-                print "end"
                 Insertpoints numpnts(times),1,times
                 times[numpnts(times)]=threshTimes[i]
                 Insertpoints numpnts(values),1,values
                 variable valuefinder = x2pnt(w,times[numpnts(times)])
                 values[numpnts(values)]=w[valuefinder]
-                
-                
-                
                 
             endif
         endfor
@@ -95,10 +100,10 @@ Function findRMV(w)
         Duplicate/O restVals $"RMPWave" 
         Wave RMPWave 
          
-        Curvefit /NTHR=0 line restVals /D=RMPWave  
+        Curvefit /Q/N/NTHR=0 line restVals /D=RMPWave  
          
         if (abs(((RMPWave[numpnts(RMPWave)])-(RMPWave[0]))>.010))  
-                print "Error: Significant change in RMP" // detects if the starting and ending RMP are significantly different 
+                print "Error: Significant change in RMP in Wave: "+ NameofWave(w) // detects if the starting and ending RMP are significantly different 
                 endif 
  
       end
@@ -123,6 +128,10 @@ Function peakdetect(w,threshold)
         Make /O/D/N=(numspikes) AHPamplitudes
         Make /O/D/N=(numspikes) AHPendtimes
         Make /O/D/N=(numspikes) AHPendvalues
+        Make /O/D/N=(numspikes) AHPdurations
+        Make /O/D/N=(numspikes) halfwidths
+        Wave times = root:times
+        Make /O/D/N= (numspikes*2) halfwidthpointsAll
 
         Variable peak
         Variable peaktime
@@ -130,6 +139,10 @@ Function peakdetect(w,threshold)
         variable i
         variable pos=0
         wave RMPWave = root:RMPWave
+        variable amplitude
+        variable halfamp
+        variable halfampvoltage
+        variable halfwidthrightpos= 0 
        
         Wave diffWaveCrossWave //from threshdetect()
 
@@ -138,17 +151,24 @@ Function peakdetect(w,threshold)
                 Variable xDown=crosswave[i+1]
                 WaveStats/Q/R=(xUp,xDown) w
                 peak = V_max
-                //print peak
                 peaktime = V_maxloc
                 peaktimepoint= x2pnt(V_maxloc,w)
-                //print peaktime
                 Spikepeaks[pos]=peak
                 spiketimes[pos]=peaktime
-                spikeamps[pos]= peak - values[pos]
+                
+                amplitude = peak - values[pos]
+                halfamp = amplitude/2
+                spikeamps[pos]= amplitude
+                halfampvoltage = values[pos] + halfamp
                 
                 AHP(pos,0.030,spiketimes[pos],w)
-                
-                pos += 1
+                AHPcurvefit(w,AHPtimes[pos],pos)
+                Findlevels/Q/R=(times[pos],AHPtimes[pos])/DEST=halfwidthpoints w halfampvoltage // halfwidth finder
+                halfwidths[pos] = halfwidthpoints[1]-halfwidthpoints[0]
+                halfwidthpointsAll[halfwidthrightpos] = halfwidthpoints[0]
+                halfwidthpointsAll[halfwidthrightpos+1]= halfwidthpoints[1]
+                halfwidthrightpos +=2
+                pos+=1
                 
 
         endfor
@@ -209,20 +229,28 @@ Function AHPCurvefit(w,peaktime, p)
     Wave w
     Variable peaktime
     Wave AHPtimes = root:AHPtimes
-    Wave AHPendtimes=root:AHPends
+    Wave AHPendtimes=root:AHPendtimes
     Wave AHPendvalues=root:AHPendvalues
+    Wave AHPdurations = root:AHPdurations
     
-    Variable peakpoint = x2pnt(peaktime, w)
+    Variable peakpoint= x2pnt(w, peaktime)
     
     variable i
     
     
-    for (i=peaktime;i<=numpnts(w);i+=1)
+    for (i=peakpoint;i<=numpnts(w);i+=1)
         variable pastRMV = compareValues(RMPwave, w, i)
         if (pastRMV>0)
-            AHPendtimes[p]=pnt2x(i, w)
+            AHPendtimes[p]=pnt2x(w,i)
+            AHPdurations[p]=AHPendtimes[p] - peaktime
             AHPendvalues[p]=w[i]
+            break
         Endif
     Endfor
     
 End
+
+
+
+//Display all calculations on top of source wave
+Display 'PMPulse_1_1_1_1_V-mon'; AppendToGraph spikepeaks vs spiketimes; AppendToGraph RMPWave; AppendToGraph AHPpeaks vs AHPtimes; AppendToGraph threshValues vs threshTimes; AppendToGraph AHPendvalues vs AHPendtimes
