@@ -7,14 +7,12 @@ Function spontspikeAnalysis(w, ampThresh)
         findRMV(w)
         threshdetect(w) 
         peakdetect(w, AmpThresh)
+        ISI(w)
         graphWave(w)
+        stats(w)
+        
         //to do:
         //ISI or spike rate
-        
-        //graphall function to plot everything that the program calculated for this wave on top of the source wave
-        //graph can then be saved (w/wavename) so that user can visualy verify results 
-       
-        
         // "stats" function, that calculates the mean and standard deviation of all the calculated values and then outputs them into the final results wave 
        // threshold voltage
        // spike amplitude
@@ -167,12 +165,15 @@ Function peakdetect(w,threshold)
                 AHPcurvefit(w,AHPtimes[pos],pos)
                 Findlevels/Q/R=(times[pos],AHPtimes[pos])/DEST=halfwidthpoints w halfampvoltage // halfwidth finder
                 
-                halfwidths[pos] = halfwidthpoints[1]-halfwidthpoints[0]
+               
+             	  halfwidths[pos] = halfwidthpoints[1]-halfwidthpoints[0]
                 halfwidthpointsAll[halfwidthleftpos] = halfwidthpoints[0]
                 halfwidthpointsAll[halfwidthleftpos+1]= halfwidthpoints[1]
                 halfwidthpointsAllvalues[halfwidthleftpos] = halfampvoltage
                 halfwidthpointsAllvalues[halfwidthleftpos+1] = halfampvoltage
                 halfwidthleftpos +=2
+                
+                
                 pos+=1
                 
 
@@ -255,6 +256,27 @@ Function AHPCurvefit(w,peaktime, p)
     
 End
 
+Function ISI(w)
+	Wave w
+	Wave spiketimes=root:spiketimes
+	Make/O/D/N=(numpnts(spiketimes)-1) spikeintervals
+	
+	variable i
+	variable n=0
+	
+	for (i=0;i<numpnts(spiketimes);i+=1)
+		variable interval
+		interval = spiketimes[i+1]-spiketimes[i]
+		if (interval>0)
+			spikeintervals[n]=interval
+			n+=1
+			endif
+		endfor
+	
+End
+		
+		
+
 
 Function graphWave(w)
 
@@ -274,5 +296,144 @@ ModifyGraph mode(halfwidthpointsAllvalues)=3,marker(halfwidthpointsAllvalues)=4;
 ModifyGraph rgb(halfwidthpointsAllvalues)=(0,0,0)
 
 TextBox/C/N=text0/F=0 nameofwave(w)
+
+End
+
+Function Stats(w)
+
+	Wave w
+	
+	Wave spikepeaks= root:spikepeaks
+	Wave spimetimes= root:spiketimes
+	Wave spikeamps =root:spikeamps
+       Wave AHPtimes=root:AHPtimes
+       Wave AHPpeaks= root:AHPpeaks
+       Wave AHPamplitudes=root:AHPamplitudes
+       Wave AHPendtimes=root:AHPendtimes
+       Wave AHPdurations = root:AHPdurations
+       Wave values = root:values
+     
+     	
+	variable column =1
+	variable labels=1
+	variable row = 1 // will go in driver, advance row for new wave 
+
+	Make/O/N=(1,16) statsWave //goes in driver
+	Make/O/T/N=(1,16) indexWave //goes in driver, will hold names of each wave and title of each column
+	
+	indexWave[row][0]=nameofwave(w)
+	statswave[0][]=0
+	statswave[][0]=0
+	InsertPoints 0,1, statsWave
+	InsertPoints 0,1, indexWave
+	
+
+
+	//spike amplitude
+	indexWave[0][labels]= "Spike Amplitude(mean)"
+	labels+=1
+	
+	Wavestats/Q spikeamps
+	statsWave[row][column]=V_avg
+	column+=1
+	
+	indexWave[0][labels]= "Spike Amplitude(stdev)"
+	labels+=1
+	statsWave[row][column]=V_sdev
+	column+=1
+	
+	//spike threshold
+	indexWave[0][labels]= "Threshold"
+	labels+=1
+	
+	Wavestats/Q  values
+	statsWave[row][column]=V_avg
+	column+=1
+	
+	indexWave[0][labels]= "Threshold(sdev)"
+	labels+=1
+	statsWave[row][column]=V_sdev
+	column+=1
+	
+	//half widths
+	indexWave[0][labels]= "Spike Half-Width"
+	labels+=1
+	
+	Wavestats/Q  halfwidthpointsAllvalues
+	statsWave[row][column]=V_avg
+	
+	column+=1
+	indexWave[0][labels]= "Spike Half-Width(sdev)"
+	labels+=1
+	statsWave[row][column]=V_sdev
+	column+=1
+	
+	//AHP amplitude
+	indexWave[0][labels]= "AHP Amplitude"
+	labels+=1
+	
+	Wavestats/Q AHPamplitudes
+	statsWave[row][column]=V_avg 
+	column+=1
+	indexWave[0][labels]= "AHP Amplitude(sdev)"
+	labels+=1
+	statsWave[row][column]=V_sdev 
+	column+=1
+	
+	
+	// AHP duration
+	indexWave[0][labels]= "AHP duration"
+	labels+=1
+
+	Wavestats/Q AHPdurations
+	statsWave[row][column]=V_avg
+	column+=1
+	indexWave[0][labels]= "AHP duration(sdev)"
+	labels+=1
+	statsWave[row][column]=V_sdev
+	column+=1
+	
+	//RMP
+	Wavestats/Q RMPwave
+	indexWave[0][labels]= "RMP"
+	labels+=1
+		
+	statsWave[row][column]=V_avg
+	column+=1
+	
+	
+	// # spikes
+	indexWave[0][labels]= "# spikes"
+	labels+=1
+
+	statsWave[row][column]=numpnts(spikepeaks)
+	column+=1
+	
+	// spike rate
+	indexWave[0][labels]= "Spike rate (hz)"
+	labels+=1
+
+	variable waveduration
+	variable lastpoint = numpnts(w)
+	waveduration = pnt2x(w,lastpoint)
+	statsWave[row][column]=(numpnts(spikepeaks))/waveduration
+	column+=1
+	
+	//spike interval
+	// AHP duration
+	indexWave[0][labels]= "Interspike Interval (avg)"
+	labels+=1
+
+	Wavestats/Q spikeintervals
+	statsWave[row][column]=V_avg
+	column+=1
+	
+	indexWave[0][labels]= "Interspike Interval(sdev)"
+	labels+=1
+	statsWave[row][column]=V_sdev
+	column+=1
+	
+	
+	
 
 End
