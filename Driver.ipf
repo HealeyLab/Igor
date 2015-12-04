@@ -21,15 +21,15 @@ Function driver_batch(w) // use of *_batch here will allow us to use preexisting
 
 end
 //***************************************************************************************************************************
-Function FIWaves(w)//root
+Function FIWaves()
 	//eventually, have it generate a wave per cell
-	wave w
-	String list = WaveList("*Cell*", ";", "")
+	String list = WaveList("*Cell*pa*", "\r", "")//list of cells
 	//get list of cell nums, for elem in each, call fi curve on sublist
 	variable ic, listSize = itemsInList(list)
 	Make/O/T=2/N=0 cellNumbers//ie, Cell1, Cell2, Cell3, etc
-	for(ic = 0; ic < listSize - 14; ic +=1)
-		String currentItem = stringfromlist(ic, list)
+	
+	for(ic = 0; ic < listSize; ic +=1)
+		String currentItem = stringfromlist(ic, list, "\r")
 		variable cellPos  = strsearch(currentItem, "Cell", 0)//cell pos is literally the index where cell's c is in the string. will use that as reference point.
 
 		//Basically, the last part of the for loop is extracting the cell number. Here's how we do it:
@@ -38,13 +38,13 @@ Function FIWaves(w)//root
 		variable i = 0
 		String cellNum = ""
 		do
-			cellNum += currentItem[cellPos + 4 + i]
+			cellNum += currentItem[cellPos + 4 + i] //cell is 4 letters long
 			i += 1
 		while(!stringmatch(currentItem[cellPos + 4 + i], "."))
 		InsertPoints numpnts(cellNumbers), 1, cellNumbers
 		cellNumbers[numpnts(cellNumbers) - 1] = cellNum
 	endfor
-
+	
 	//now call FICurve on a custom list of strings corresponding to waves whose names contain "Cell" + cellNames[i]
 	for(ic = 0; ic < numpnts(cellNumbers); ic+=1)
 		String wName = "Cell" + cellNumbers[ic]
@@ -52,49 +52,60 @@ Function FIWaves(w)//root
 		variable jd
 		String sublist = ""
 		//making sublist 1; 2; 3
-		for(jd = 0; jd < listSize; i +=1)
-			if(stringmatch(stringfromlist(jd, list), "*Cell" + cellNumbers[ic] + "*"))
-				if(jd == listSize - 1)	
-					sublist += stringfromlist(jd, list)
-				else
-					sublist += stringfromlist(jd, list) + "; "
+		
+		for(jd = 0; jd < listSize; jd +=1)
+			if(stringmatch(stringfromlist(jd, list, "\r"), "*" + wName + "*"))
+				sublist += stringfromlist(jd, list) + "\r"
+				
 			endif
-		end
-		FICurve(sublist, wName)//now wName is in the data browser w data in it.
+		endfor
+		
+		FICurve(sublist, $wName)//now wName is in the data browser w data in it.
 	endfor
-	
+	print "return here"
+	return NaN
 end
-Function FICurve(sublist, wName)
+
+Function FICurve(sublist, wName)//doesnt return anything, just changes a value.
 	String sublist
 	wave wName
 	//dont use wavelist here, its for current string
-	variable ic, spikes, currentInjected, FI, numNeg = 5//bc -50 -40 -30 -20 -10
+	variable ic, numNeg = 5//bc -50 -40 -30 -20 -10
 	String label
 	//NEG
 	for(ic = 0; ic < numNeg; ic+=1)
-		wave current = $stringfromlist(ic, sublist)
-		label = num2str((ic - 6) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
+		wave current = $stringfromlist(ic, sublist, "\r")
+		label = num2str((ic - 5) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
 		//FI is spikes over curr injected
-		spikes = spontanalysis(current, findRMV(current))
-		currentInjected = str2num(label)
-		FI = spikes / currentInjected
-		//Add to wave
 		InsertPoints numpnts(wName) , 1, wName
-		wName[numpnts(wName)] =FI
+		wName[numpnts(wName) - 1] =FI(label, current)
 	endfor
 	//POS
 	variable numPos = 10 //bc 0 1 2 3 4 5 6  7 8 9
 	for(ic = 0; ic < numPos; ic+=1)
-		wave current = $stringfromlist(ic, sublist)
+		wave current = $stringfromlist(ic + numNeg, sublist, "\r")
 		label = num2str((ic) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
-		//FI is spikes over curr injected
-		spikes = spontanalysis(current, findRMV(current))
-		currentInjected = str2num(label)
-		FI = spikes / currentInjected
-		//Add to wave
 		InsertPoints numpnts(wName) , 1, wName
-		wName[numpnts(wName)] =FI
+		wName[numpnts(wName) - 1] =FI(label, current)
 	endfor
+end
+
+Function FI(label, current)
+	String label
+	wave current
+	
+	variable spikes, currentInjected, FI
+	//find num spikes
+	variable level = (findSSV(current) + .020)
+	findLevels/DEST=levels/Q current, level
+	
+	spikes = numpnts(levels) / 2
+	currentInjected = str2num(label)
+	FI = spikes / currentInjected
+	print "*********************\r" + nameofwave(current) + "- " + "\rFI: " + num2str(FI) + "\rspikes: " + num2str(spikes) + "\rcurrent injected: " + num2str(currentInjected) + "\rlevel: " + num2str(level)//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+	
+	//Add to wave
+	return FI
 end
 //***************************************************************************************************************************
 Function/D findSSV(w)
@@ -119,42 +130,10 @@ Function/D findSSV(w)
 		endif
 	endfor
        
-       print mean(output)
+       return mean(output)
 
 end
-//******************************************************************************************************************************
-
-//*****************************************************************************************************************************
-Function/D findRMV(w)
-        wave w
-
-        Variable minVoltage = -.090 //lower limit for RMP
-        Variable maxVoltage = -.040 // upper limit for RMP
-        Duplicate/O w $"restVals"
-        Wave restVals
-        variable ic
-
-        for(ic = 0; ic < numpnts(w); ic+=1) // can set to 3 to 3.5 s (in points) for current step protocol
-                if(w[ic]<maxVoltage && w[ic] > minVoltage)
-                restVals[ic]=w[ic]
-                else
-                restVals[ic]=NaN
-                endif
-        endfor
-        
-        Duplicate/O restVals $"RMPWave"
-        Wave RMPWave
-        
-        Curvefit /NTHR=0 line restVals /D=RMPWave  // detects if 
-        
-        
-        if (abs(((RMPWave[numpnts(RMPWave)])-(RMPWave[0]))>.010)) 
-        	print "Error: Significant change in RMP" // detects if the starting and ending RMP are significantly different
-         	endif
-	return (RMPWave[numpnts(RMPWave) - 1] + RMPWave[0]) / 2
-      end
-
-//************************************************
+//**************************************************************
 //This function detects spikes using the threshold method and returns spike times, spike ampitudes, spike half-widths, AHP amplitude, and AHP half-width
 
 Function spontanalysis(w, RMP) 
