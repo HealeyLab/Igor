@@ -17,6 +17,7 @@ Function AllWave()
 		variable labels=1
 		variable row = 0 // will go in driver, advance row for new wave 
 		
+		indexwave[0][0]= "Name of Wave"
 		indexWave[0][labels]= "Spike Amplitude(mean)"
 		labels+=1
 		indexWave[0][labels]= "Spike Amplitude(stdev)"
@@ -48,9 +49,6 @@ Function AllWave()
 		indexWave[0][labels]= "Interspike Interval(sdev)"
 		labels+=1
 		
-		row+=1
-	
-	
 	
 	
 	
@@ -66,22 +64,22 @@ Function AllWave()
 	String spont = "*"+ SpontWave + "*"
 	string cstep = "*" + cStepWave + "*"
 	String SpontWaveList= WaveList(spont, "\r","")
-	print SpontWaveList + "List ends here"
 	String cStepWaveList = WaveList(cstep, "\r","")
 
 	Variable i = 0
 	
 	
 	for (i=0; i<itemsinlist(Spontwavelist,"\r"); i+=1)
-		print StringfromList(i,SpontWaveList, "\r")
-		print i
-		Wave current= $StringfromList(i, SpontWaveList, "\r")
-		indexwave[row][0] = nameofwave(current)
-		spontspikeanalysis(current, -0.030)
+		row+=1
+		insertpoints row, 1, indexWave
 		
+		Wave current= $StringfromList(i, SpontWaveList, "\r")
+		indexWave[row][0]=nameofwave(current)
+		spontspikeanalysis(current, -0.030)
+		Insertpoints  (numpnts(statswave)-2),1, statsWave
 		stats(current,row)
-		variable numrows = numpnts(statsWave)
-		Insertpoints  numrows,1, statsWave
+		
+		
 		endfor
 		
 	
@@ -101,7 +99,6 @@ Function Stats(w,row)
 
 	Wave w
 	Variable row
-	Wave/T indexWave=root:indexwave
 	Wave statswave=root:statswave
 	
 	Wave spikepeaks= root:spikepeaks
@@ -114,12 +111,8 @@ Function Stats(w,row)
        Wave AHPdurations = root:AHPdurations
        Wave values = root:values
      
-	indexWave[row][0]= nameofwave(w)
-	statswave[0][]=0
-	statswave[][0]=0
-	InsertPoints 0,1, statsWave
-	InsertPoints 0,1, indexWave
-	
+	statswave[0][]=NaN
+	statswave[][0]=NaN
 
 	Variable column = 1
 
