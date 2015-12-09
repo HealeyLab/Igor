@@ -8,8 +8,8 @@ Function spontspikeAnalysis(w, ampThresh)
         threshdetect(w) 
         peakdetect(w, AmpThresh)
         ISI(w)
-        graphWave(w)
-        stats(w)
+       //graphWave(w)
+        
         
         //to do:
         //ISI or spike rate
@@ -35,7 +35,7 @@ Function threshdetect(w) //wave "times" and wave "values" contain the timing and
         Wave w
         Differentiate w/D=diffWave
         
-    Smooth 10, diffWave
+   	 Smooth 10, diffWave
 
         
         Wave diffWave
@@ -80,11 +80,12 @@ end
 //*************************************************
 
 Function findRMV(w) 
-        wave w 
- 
+        wave w
         Variable minVoltage = -.090 //lower limit for RMP 
         Variable maxVoltage = -.040 // upper limit for RMP 
-        Duplicate/O w restvals 
+    	Duplicate/O w $"restvals"
+    	Wave restvals
+        
         variable ic 
  
         for(ic = 0; ic < numpnts(w); ic+=1) // can set to 3 to 3.5 s (in points) for current step protocol 
@@ -142,9 +143,7 @@ Function peakdetect(w,threshold)
         variable halfamp
         variable halfampvoltage
         variable halfwidthleftpos= 0 
-       
-        Wave diffWaveCrossWave=root:diffWaveCrossWave //from threshdetect()
-
+      
         for (i=0;i<numpnts(crosswave);i+=2)
                 Variable xUp = crosswave[i]
                 Variable xDown=crosswave[i+1]
@@ -298,141 +297,3 @@ TextBox/C/N=text0/F=0 nameofwave(w)
 
 End
 
-Function Stats(w)
-
-	Wave w
-	
-	Wave spikepeaks= root:spikepeaks
-	Wave spimetimes= root:spiketimes
-	Wave spikeamps =root:spikeamps
-       Wave AHPtimes=root:AHPtimes
-       Wave AHPpeaks= root:AHPpeaks
-       Wave AHPamplitudes=root:AHPamplitudes
-       Wave AHPendtimes=root:AHPendtimes
-       Wave AHPdurations = root:AHPdurations
-       Wave values = root:values
-     
-     	
-	variable column =1
-	variable labels=1
-	variable row = 1 // will go in driver, advance row for new wave 
-
-	Make/O/N=(1,16) statsWave //goes in driver
-	Make/O/T/N=(1,16) indexWave //goes in driver, will hold names of each wave and title of each column
-	
-	indexWave[row][0]=nameofwave(w)
-	statswave[0][]=0
-	statswave[][0]=0
-	InsertPoints 0,1, statsWave
-	InsertPoints 0,1, indexWave
-	
-
-
-	//spike amplitude
-	indexWave[0][labels]= "Spike Amplitude(mean)"
-	labels+=1
-	
-	Wavestats/Q spikeamps
-	statsWave[row][column]=V_avg
-	column+=1
-	
-	indexWave[0][labels]= "Spike Amplitude(stdev)"
-	labels+=1
-	statsWave[row][column]=V_sdev
-	column+=1
-	
-	//spike threshold
-	indexWave[0][labels]= "Threshold"
-	labels+=1
-	
-	Wavestats/Q  values
-	statsWave[row][column]=V_avg
-	column+=1
-	
-	indexWave[0][labels]= "Threshold(sdev)"
-	labels+=1
-	statsWave[row][column]=V_sdev
-	column+=1
-	
-	//half widths
-	indexWave[0][labels]= "Spike Half-Width"
-	labels+=1
-	
-	Wavestats/Q  halfwidthpointsAllvalues
-	statsWave[row][column]=V_avg
-	
-	column+=1
-	indexWave[0][labels]= "Spike Half-Width(sdev)"
-	labels+=1
-	statsWave[row][column]=V_sdev
-	column+=1
-	
-	//AHP amplitude
-	indexWave[0][labels]= "AHP Amplitude"
-	labels+=1
-	
-	Wavestats/Q AHPamplitudes
-	statsWave[row][column]=V_avg 
-	column+=1
-	indexWave[0][labels]= "AHP Amplitude(sdev)"
-	labels+=1
-	statsWave[row][column]=V_sdev 
-	column+=1
-	
-	
-	// AHP duration
-	indexWave[0][labels]= "AHP duration"
-	labels+=1
-
-	Wavestats/Q AHPdurations
-	statsWave[row][column]=V_avg
-	column+=1
-	indexWave[0][labels]= "AHP duration(sdev)"
-	labels+=1
-	statsWave[row][column]=V_sdev
-	column+=1
-	
-	//RMP
-	Wavestats/Q RMPwave
-	indexWave[0][labels]= "RMP"
-	labels+=1
-		
-	statsWave[row][column]=V_avg
-	column+=1
-	
-	
-	// # spikes
-	indexWave[0][labels]= "# spikes"
-	labels+=1
-
-	statsWave[row][column]=numpnts(spikepeaks)
-	column+=1
-	
-	// spike rate
-	indexWave[0][labels]= "Spike rate (hz)"
-	labels+=1
-
-	variable waveduration
-	variable lastpoint = numpnts(w)
-	waveduration = pnt2x(w,lastpoint)
-	statsWave[row][column]=(numpnts(spikepeaks))/waveduration
-	column+=1
-	
-	//spike interval
-	// AHP duration
-	indexWave[0][labels]= "Interspike Interval (avg)"
-	labels+=1
-
-	Wavestats/Q spikeintervals
-	statsWave[row][column]=V_avg
-	column+=1
-	
-	indexWave[0][labels]= "Interspike Interval(sdev)"
-	labels+=1
-	statsWave[row][column]=V_sdev
-	column+=1
-	
-	
-	
-
-End
