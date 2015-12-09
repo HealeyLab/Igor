@@ -84,8 +84,7 @@ Function findRMV(w)
  
         Variable minVoltage = -.090 //lower limit for RMP 
         Variable maxVoltage = -.040 // upper limit for RMP 
-        Duplicate/O w $"restVals" 
-        Wave restVals 
+        Duplicate/O w restvals 
         variable ic 
  
         for(ic = 0; ic < numpnts(w); ic+=1) // can set to 3 to 3.5 s (in points) for current step protocol 
@@ -144,7 +143,7 @@ Function peakdetect(w,threshold)
         variable halfampvoltage
         variable halfwidthleftpos= 0 
        
-        Wave diffWaveCrossWave //from threshdetect()
+        Wave diffWaveCrossWave=root:diffWaveCrossWave //from threshdetect()
 
         for (i=0;i<numpnts(crosswave);i+=2)
                 Variable xUp = crosswave[i]
