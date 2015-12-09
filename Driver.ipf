@@ -47,6 +47,7 @@ Function stepDataAnalysis(cStepCurves)
 				
 			endif
 		endfor
+		//^^^^^^^^^^^^^^^^^^^^^
 		InsertPoints/M=0 numpnts(cStepCurves), 1, cStepCurves//adds to length of base wave
 		Curves(sublist, cStepCurves)//now cStepFICurves is in data browser w data
 	endfor
@@ -62,21 +63,25 @@ Function Curves(sublist, wName)//doesnt return anything, just adds values.
 	for(ic = 0; ic < numNeg; ic+=1)
 		wave current = $stringfromlist(ic, sublist, "\r")
 		label = num2str((ic - 5) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT 		InsertPoints M=1 numpnts(wName) , 1, wName
-		InsertPoints/M=1 numpnts(wName), 1, wName
-		InsertPoints/M=2 numpnts(wName), 1, wName
-		wName[numpnts(wName) - 1][ic][] =FI(label, current)
-		//wName[numpnts(wName) - 1][][ic] =IV(label, current)
+		//^^^^^^^^^^^^^^^^^^^^^^^^^
+		InsertPoints/M=1 DimSize(wName, 1), 1, wName
+		//^^^^^^^^^^^^^^^^^^^^^^^^^
+		InsertPoints/M=2 DimSize(wName, 2), 1, wName
+		print "%%%%\r" + num2str(DimSize(wName, 0)) + "%%%%\r"
+		wName[DimSize(wName, 0) - 1][ic][] =FI(label, current)
+		//wName[DimSize(wName, 0) - 1][][ic] =IV(label, current)
 	endfor
 	//POS
 	variable numPos = 10 //bc 0 1 2 3 4 5 6  7 8 9
 	for(ic = 0; ic < numPos; ic+=1)
 		wave current = $stringfromlist(ic + numNeg, sublist, "\r")
 		label = num2str((ic) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
-		//InsertPoints M=0 numpnts(wName) , 1, wName
-		InsertPoints/M=1 numpnts(wName), 1, wName
-		InsertPoints/M=2 numpnts(wName), 1, wName
-		wName[numpnts(wName) - 1][ic][] =FI(label, current)
-		//wName[numpnts(wName) - 1][][ic] =IV(label, current)
+		//^^^^^^^^^^^^^^^^^^^^^^^^^
+		InsertPoints/M=1 DimSize(wName, 1), 1, wName
+		//^^^^^^^^^^^^^^^^^^^^^^^^^
+		InsertPoints/M=2 DimSize(wName, 2), 1, wName
+		wName[DimSize(wName, 0) - 1][ic + numNeg][] =FI(label, current)
+		//wName[DimSize(wName, 0) - 1][][ic + numNeg] =IV(label, current)
 	endfor
 end
 
