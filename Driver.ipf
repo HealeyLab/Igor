@@ -2,26 +2,15 @@
 //Author: Dan Pollak
 //10/30/15
 
-Function driver_batch(w) // use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
-	Wave w
-	String waveName = NameofWave(w)
-	Make /O/T spontWaveNames
-	Make /O/D spontData
-	Make /O/T cStepWaveNames
-	Make /O/D cStepData
-	if (stringmatch(waveName, "spont")>0)
-		Insertpoints numpnts(spontWaveNames),1,spontWaveNames	
-		//spontanalysis(w) //this function will need to be fixed, since it takes RMP as a user-calculated parameter
-	elseif(stringmatch(waveName, "-")>0)
-	// bc all other cases of waves are NOT current steps, we need to discriminate further using this conditional
-		Insertpoints numpnts(cStepWaveNames),1,cStepWaveNames
-		//cstepanalysis(w) //function needs to be made 
-		
-	endif	
+Function driver_batch()// use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
+	//for spont, do something like below for cSteps
+	Make /O/D/N=(0, 0, 0) cStepCurves//dim=0: Cell number dim=1: FI dim=2: IV
+	stepDataAnalysis(cStepCurves)//changes sStepData
 
 end
 //***************************************************************************************************************************
-Function FIWaves()
+Function stepDataAnalysis(cStepCurves)
+	wave cStepCurves
 	//eventually, have it generate a wave per cell
 	String list = WaveList("*Cell*pa*", "\r", "")//list of cells
 	//get list of cell nums, for elem in each, call fi curve on sublist
@@ -48,7 +37,6 @@ Function FIWaves()
 	//now call FICurve on a custom list of strings corresponding to waves whose names contain "Cell" + cellNames[i]
 	for(ic = 0; ic < numpnts(cellNumbers); ic+=1)
 		String wName = "Cell" + cellNumbers[ic]
-		Make/O/D/N=0 $wName//for insertPoints
 		variable jd
 		String sublist = ""
 		//making sublist 1; 2; 3
@@ -59,14 +47,12 @@ Function FIWaves()
 				
 			endif
 		endfor
-		
-		FICurve(sublist, $wName)//now wName is in the data browser w data in it.
+		InsertPoints/M=0 numpnts(cStepCurves), 1, cStepCurves//adds to length of base wave
+		Curves(sublist, cStepCurves)//now cStepFICurves is in data browser w data
 	endfor
-	print "return here"
-	return NaN
 end
 
-Function FICurve(sublist, wName)//doesnt return anything, just changes a value.
+Function Curves(sublist, wName)//doesnt return anything, just adds values.
 	String sublist
 	wave wName
 	//dont use wavelist here, its for current string
@@ -75,18 +61,22 @@ Function FICurve(sublist, wName)//doesnt return anything, just changes a value.
 	//NEG
 	for(ic = 0; ic < numNeg; ic+=1)
 		wave current = $stringfromlist(ic, sublist, "\r")
-		label = num2str((ic - 5) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
-		//FI is spikes over curr injected
-		InsertPoints numpnts(wName) , 1, wName
-		wName[numpnts(wName) - 1] =FI(label, current)
+		label = num2str((ic - 5) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT 		InsertPoints M=1 numpnts(wName) , 1, wName
+		InsertPoints/M=1 numpnts(wName), 1, wName
+		InsertPoints/M=2 numpnts(wName), 1, wName
+		wName[numpnts(wName) - 1][ic][] =FI(label, current)
+		//wName[numpnts(wName) - 1][][ic] =IV(label, current)
 	endfor
 	//POS
 	variable numPos = 10 //bc 0 1 2 3 4 5 6  7 8 9
 	for(ic = 0; ic < numPos; ic+=1)
 		wave current = $stringfromlist(ic + numNeg, sublist, "\r")
 		label = num2str((ic) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
-		InsertPoints numpnts(wName) , 1, wName
-		wName[numpnts(wName) - 1] =FI(label, current)
+		//InsertPoints M=0 numpnts(wName) , 1, wName
+		InsertPoints/M=1 numpnts(wName), 1, wName
+		InsertPoints/M=2 numpnts(wName), 1, wName
+		wName[numpnts(wName) - 1][ic][] =FI(label, current)
+		//wName[numpnts(wName) - 1][][ic] =IV(label, current)
 	endfor
 end
 
@@ -96,7 +86,7 @@ Function FI(label, current)
 	
 	variable spikes, currentInjected, FI
 	//find num spikes
-	variable level = (findSSV(current) + .020)
+	variable level = 0
 	findLevels/DEST=levels/Q current, level
 	
 	spikes = numpnts(levels) / 2
