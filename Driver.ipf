@@ -1,25 +1,24 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 //Author: Dan Pollak
-//10/30/15
+//12/23/2015
 
 Function driver_batch()// use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
-	//for spont, do something like below for cSteps
+	//for spont, do something like below for stepDataAnalysis()
 	Make /O/D/N=(0, 0, 0) cStepCurves//dim=0: Cell number dim=1: FI dim=2: IV
 	stepDataAnalysis(cStepCurves)//changes sStepData
-
 end
 //***************************************************************************************************************************
 Function stepDataAnalysis(cStepCurves)
 	wave cStepCurves
 	//eventually, have it generate a wave per cell
-	String list = WaveList("*Cell*pa*", "\r", "")//list of cells
+	String list = WaveList("*Cell*pa*", "\r", "")//list of cells, includes .r2, .r3...
 	//get list of cell nums, for elem in each, call fi curve on sublist
 	variable ic, listSize = itemsInList(list)
 	Make/O/T=2/N=0 cellNumbers//ie, Cell1, Cell2, Cell3, etc
 	
 	for(ic = 0; ic < listSize; ic +=1)
 		String currentItem = stringfromlist(ic, list, "\r")
-		variable cellPos  = strsearch(currentItem, "Cell", 0)//cell pos is literally the index where cell's c is in the string. will use that as reference point.
+		variable cellPos  = strsearch(currentItem, "Cell", 0)//cellPos is literally the index where cell's c is in the string. will use that as reference point.
 
 		//Basically, the last part of the for loop is extracting the cell number. Here's how we do it:
 		//while next char is not ".", keep adding on to the number. It'll either be 1 or 2 digits long, but this will always work
@@ -36,9 +35,9 @@ Function stepDataAnalysis(cStepCurves)
 	
 	//now call FICurve on a custom list of strings corresponding to waves whose names contain "Cell" + cellNames[i]
 	for(ic = 0; ic < numpnts(cellNumbers); ic+=1)
-		String wName = "Cell" + cellNumbers[ic]
-		variable jd
-		String sublist = ""
+		String wName = "Cell" + cellNumbers[ic]//This is the umpteenth cell patched onto in the experiment
+		variable jd//just a counter
+		String sublist = ""//will add on to this the names of filenames of this particular umteenth cell
 		//making sublist 1; 2; 3
 		
 		for(jd = 0; jd < listSize; jd +=1)
@@ -57,31 +56,32 @@ Function Curves(sublist, wName)//doesnt return anything, just adds values.
 	String sublist
 	wave wName
 	//dont use wavelist here, its for current string
-	variable ic, numNeg = 5//bc -50 -40 -30 -20 -10
+	variable i, numNeg = 5//bc -50 -40 -30 -20 -10
 	String label
 	//NEG
-	for(ic = 0; ic < numNeg; ic+=1)
-		wave current = $stringfromlist(ic, sublist, "\r")
-		label = num2str((ic - 5) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT 		InsertPoints M=1 numpnts(wName) , 1, wName
+	for(i = 0; i < numNeg; i+=1)
+		wave current = $stringfromlist(i, sublist, "\r")
+		label = num2str((i - 5) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT 		InsertPoints M=1 numpnts(wName) , 1, wName
 		//^^^^^^^^^^^^^^^^^^^^^^^^^
 		InsertPoints/M=1 DimSize(wName, 1), 1, wName
 		//^^^^^^^^^^^^^^^^^^^^^^^^^
 		InsertPoints/M=2 DimSize(wName, 2), 1, wName
 		print "%%%%\r" + num2str(DimSize(wName, 0)) + "%%%%\r"
-		wName[DimSize(wName, 0) - 1][ic][] =FI(label, current)
-		//wName[DimSize(wName, 0) - 1][][ic] =IV(label, current)
+		wName[DimSize(wName, 0) - 1][i][0] =FI(label, current)//adds an FI value to the FI branch of this cell			currentInjected = label
+		//wName[DimSize(wName, 0) - 1][0][i] =IV(label, current)
 	endfor
 	//POS
 	variable numPos = 10 //bc 0 1 2 3 4 5 6  7 8 9
-	for(ic = 0; ic < numPos; ic+=1)
-		wave current = $stringfromlist(ic + numNeg, sublist, "\r")
-		label = num2str((ic) * 10)//bc for ic = 1, 1- 6 = -5 times 10 is -50, ic = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
+	for(i = 0; i < numPos; i+=1)
+		wave current = $stringfromlist(i + numNeg, sublist, "\r")
+		label = num2str((i) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
 		//^^^^^^^^^^^^^^^^^^^^^^^^^
 		InsertPoints/M=1 DimSize(wName, 1), 1, wName
 		//^^^^^^^^^^^^^^^^^^^^^^^^^
 		InsertPoints/M=2 DimSize(wName, 2), 1, wName
-		wName[DimSize(wName, 0) - 1][ic + numNeg][] =FI(label, current)
-		//wName[DimSize(wName, 0) - 1][][ic + numNeg] =IV(label, current)
+		wName[DimSize(wName, 0) - 1][i + numNeg][0] =FI(label, current)
+		print "label: " + label + "\ti: " + num2str(i)
+		//wName[DimSize(wName, 0) - 1][0][i + numNeg] =IV(label, current)
 	endfor
 end
 
@@ -97,7 +97,8 @@ Function FI(label, current)
 	spikes = numpnts(levels) / 2
 	currentInjected = str2num(label)
 	FI = spikes / currentInjected
-	print "*********************\r" + nameofwave(current) + "- " + "\rFI: " + num2str(FI) + "\rspikes: " + num2str(spikes) + "\rcurrent injected: " + num2str(currentInjected) + "\rlevel: " + num2str(level)//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+	print ("*********************\r" + nameofwave(current) + "- " + "\rFI: " + num2str(FI) + "\rspikes: " + num2str(spikes) )
+	print ("current injected: " + num2str(currentInjected))
 	
 	//Add to wave
 	return FI
@@ -106,7 +107,7 @@ end
 Function/D findSSV(w)
        wave w
        Make/O/D/N=1 output
-       variable ic
+       variable i
 	
 	Make/O/D/N = (numpnts(w)) destWave
 	Differentiate w /D=destWave//differentiates wave, now its 0 when its a peak, pos when incr, neg when dec
@@ -115,13 +116,13 @@ Function/D findSSV(w)
 	variable leveledWaveCount = 0
 	variable startTrial = x2pnt(w, 3)
 	variable endTrial = x2pnt(w, 3.5)
-	for(ic = startTrial; ic < endTrial; ic+=1)
-		if(ic == leveledWave[leveledWaveCount])
+	for(i = startTrial; i < endTrial; i+=1)
+		if(i == leveledWave[leveledWaveCount])
 			leveledWaveCount += 1//will go to check next value in leveledWave
-			ic += 50//skip ahead by however much
+			i += 50//skip ahead by however much
 		else
 			InsertPoints numpnts(output), 1, output
-			output[numpnts(output) - 1] = w[ic]
+			output[numpnts(output) - 1] = w[i]
 		endif
 	endfor
        
