@@ -4,10 +4,12 @@
 
 Function driver_batch()// use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
 	//for spont, do something like below for stepDataAnalysis()
-	Make /O/D/N=(0, 0, 0) cStepCurves//dim=0: Cell number dim=1: FI dim=2: IV
+	Make /O/D/N=(0, 0, 0)/N=0/WAVE cStepCurves//dim=0: Cell number dim=1: FI dim=2: IV
 	stepDataAnalysis(cStepCurves)//changes sStepData
+	DisplayCurves(cStepCurves)
 end
 //***************************************************************************************************************************
+
 Function stepDataAnalysis(cStepCurves)
 	wave cStepCurves
 	//eventually, have it generate a wave per cell
@@ -50,11 +52,12 @@ Function stepDataAnalysis(cStepCurves)
 		InsertPoints/M=0 numpnts(cStepCurves), 1, cStepCurves//adds to length of base wave
 		Curves(sublist, cStepCurves)//now cStepFICurves is in data browser w data
 	endfor
+	
 end
 
 Function Curves(sublist, wName)//doesnt return anything, just adds values.
 	String sublist
-	wave wName
+	wave wName//wName<-cStepCurves
 	//dont use wavelist here, its for current string
 	variable i, numNeg = 5//bc -50 -40 -30 -20 -10
 	String label
@@ -66,9 +69,8 @@ Function Curves(sublist, wName)//doesnt return anything, just adds values.
 		InsertPoints/M=1 DimSize(wName, 1), 1, wName
 		//^^^^^^^^^^^^^^^^^^^^^^^^^
 		InsertPoints/M=2 DimSize(wName, 2), 1, wName
-		print "%%%%\r" + num2str(DimSize(wName, 0)) + "%%%%\r"
-		wName[DimSize(wName, 0) - 1][i][0] =FI(label, current)//adds an FI value to the FI branch of this cell			currentInjected = label
-		//wName[DimSize(wName, 0) - 1][0][i] =IV(label, current)
+		wName[DimSize(wName, 0) - 1][i][0]=FI(label, current)//adds an FI value to the FI branch of this cell			currentInjected = label
+		wName[DimSize(wName, 0) - 1][0][i]=IV(label, current)
 	endfor
 	//POS
 	variable numPos = 10 //bc 0 1 2 3 4 5 6  7 8 9
@@ -79,13 +81,31 @@ Function Curves(sublist, wName)//doesnt return anything, just adds values.
 		InsertPoints/M=1 DimSize(wName, 1), 1, wName
 		//^^^^^^^^^^^^^^^^^^^^^^^^^
 		InsertPoints/M=2 DimSize(wName, 2), 1, wName
-		wName[DimSize(wName, 0) - 1][i + numNeg][0] =FI(label, current)
-		print "label: " + label + "\ti: " + num2str(i)
-		//wName[DimSize(wName, 0) - 1][0][i + numNeg] =IV(label, current)
+		wName[DimSize(wName, 0) - 1][i + numNeg][0] =FI(label, current)//i + numNeg b/c thats how we do.
+		wName[DimSize(wName, 0) - 1][0][i + numNeg] =IV(label, current)
+		//use label to take the decimal it returns and turn it back into the constituent parts
 	endfor
+	
+	
+end
+Function DisplayCurves(cStepCurves)
+	wave cStepCurves
+	//Graphing each cell now
+	Make xWave ={-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	variable i
+	for(i = 0; i < DimSize(cStepCurves, 0) - 1; i+=1)
+		variable electricCurrent = i - 5
+		String bottom = "Current Injected"
+		String left = "Spikes"
+		String name = "Cell " + num2str(i) + " FI Curve"
+		Make/N=15 yWave
+		Display/B=bottom/L=left/K=1/N=name cStepCurves[i][0][] vs xWave//FI//(cStepCurves[i][0][] * electricCurrent) vs xWave
+	endfor
+	
 end
 
-Function FI(label, current)
+//spikes/current
+Function/D FI(label, current)
 	String label
 	wave current
 	
@@ -102,6 +122,17 @@ Function FI(label, current)
 	
 	//Add to wave
 	return FI
+end
+//current/volts
+Function/D IV(label, current)
+	String label
+	wave current //current cell, not I.
+	//voltage (x) versus current (y), iv is current over voltage
+	variable electricalCurrent = str2num(label)
+	variable IV 
+	variable voltage = findSSV(current);//voltage is the steady state voltage
+	IV = electricalCurrent / voltage
+	return IV
 end
 //***************************************************************************************************************************
 Function/D findSSV(w)
