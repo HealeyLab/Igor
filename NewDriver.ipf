@@ -38,11 +38,11 @@ Function AllWave()
 		labels+=1
 		indexWave[0][labels]= "AHP duration(sdev)"
 		labels+=1
-		indexWave[0][labels]= "Spike rate (hz)"
-		labels+=1
 		indexWave[0][labels]= "RMP"
 		labels+=1
 		indexWave[0][labels]= "# spikes"
+		labels+=1
+		indexWave[0][labels]= "spike rate"
 		labels+=1
 		indexWave[0][labels]= "Interspike Interval (avg)"
 		labels+=1
@@ -116,66 +116,65 @@ Function Stats(w,row)
 
 	Variable column = 1
 
-	//spike amplitude
+	//spike amplitude (1)
 	Wavestats/Q spikeamps
 	statsWave[row][column]=V_avg
 	column+=1
-	statsWave[row][column]=V_sdev
+	statsWave[row][column]=V_sdev //(2)
 	column+=1
 	
-	//spike threshold
+	//spike threshold (3)
 	Wavestats/Q  values
 	statsWave[row][column]=V_avg
 	column+=1
-	statsWave[row][column]=V_sdev
+	statsWave[row][column]=V_sdev //(4)
 	column+=1
 	
-	//half widths
+	//half widths (5)
 	
 	
 	Wavestats/Q  halfwidthpointsAllvalues
 	statsWave[row][column]=V_avg
 	column+=1
-	statsWave[row][column]=V_sdev
+	statsWave[row][column]=V_sdev //(6)
 	column+=1
 	
-	//AHP amplitude
+	//AHP amplitude (7)
 	Wavestats/Q AHPamplitudes
 	statsWave[row][column]=V_avg 
 	column+=1
-	statsWave[row][column]=V_sdev 
+	statsWave[row][column]=V_sdev  //(8)
 	column+=1
 	
-	// AHP duration
+	// AHP duration (9)
 	Wavestats/Q AHPdurations
 	statsWave[row][column]=V_avg
 	column+=1
-	statsWave[row][column]=V_sdev
+	statsWave[row][column]=V_sdev //(10)
 	column+=1
 	
-	//RMP
+	//RMP (11)
 	Wavestats/Q RMPwave	
 	statsWave[row][column]=V_avg
 	column+=1
 	
-	// # spikes
+	// # spikes (12)
 	statsWave[row][column]=numpnts(spikepeaks)
 	column+=1
 	
-	// spike rate
+	// spike rate (13)
 	variable waveduration
 	variable lastpoint = numpnts(w)
 	waveduration = pnt2x(w,lastpoint)
 	statsWave[row][column]=(numpnts(spikepeaks))/waveduration
 	column+=1
 	
-	//spike interval
+	//spike interval (14)
 	
-	// AHP duration
 	Wavestats/Q spikeintervals
 	statsWave[row][column]=V_avg
 	column+=1
-	statsWave[row][column]=V_sdev
+	statsWave[row][column]=V_sdev //(15)
 	column+=1
 	
 End
