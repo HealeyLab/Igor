@@ -114,7 +114,7 @@ Function/D FI(label, current)
 	variable level = 0 //threshold for spike detection
 	
 	//evoked peak detection
-	findLevels/R=(3,3.5)/DEST=levels/Q current, level
+	findLevels/R=(3,3.5)/DEST=levels/Q/M=.001 current, level
 	
 	variable numEvoked= numpnts(levels)/2
 	
