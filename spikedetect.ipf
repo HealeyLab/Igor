@@ -8,7 +8,7 @@ Function spontspikeAnalysis(w, ampThresh)
         threshdetect(w) 
         peakdetect(w, AmpThresh)
         ISI(w)
-       //graphWave(w)
+       graphWave(w)
         
         
         //to do:
@@ -159,7 +159,7 @@ Function peakdetect(w,threshold)
                 spikeamps[pos]= amplitude
                 halfampvoltage = values[pos] + halfamp
                 
-                AHP(pos,0.030,spiketimes[pos],w)
+                AHP(pos,0.20,spiketimes[pos],w)
                 AHPcurvefit(w,AHPtimes[pos],pos)
                 Findlevels/Q/R=(times[pos],AHPtimes[pos])/DEST=halfwidthpoints w halfampvoltage // halfwidth finder
                 
