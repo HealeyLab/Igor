@@ -158,7 +158,7 @@ Function DisplayCurves(curves, cellNum, type)// we are overlaying all .rs , rVal
 		label left "Current_Injected"
 		label bottom "Voltage"
 	elseif(type == 2)
-		name = "Cell_" + num2str(cellNum) + "_FI Curve"
+		name = "Cell_" + num2str(cellNum) + "_FI_Curve"
 		Display/K=1/N=$name yWave vs xWave	
 		l = "Spikes"
 		label left l
