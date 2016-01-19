@@ -6,7 +6,7 @@ Function driver_batch()// use of *_batch here will allow us to use preexisting c
 	//for spont, do something like below for stepDataAnalysis()
 	Make /D /O /N=(0,15, 1) IVCurves//dim=0: Cell number dim=1: IV dim=2: .r
 	Make /D /O /N=(0,15, 1) FICurves//dim=0: Cell number dim=1: FI dim=2: .r
-	variable NUMBER_OF_TRIALS = 1//getTrials()
+	variable NUMBER_OF_TRIALS = getTrials()
 	variable i
 	String expNumber
 	print "IV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\t\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
@@ -40,14 +40,12 @@ Function getTrials()
 	variable lSize = itemsInList(list)
 	variable i
 	String curr
-	if(itemsInList(list) == 0)
-		return 1
-	endif
-	variable max = 0
-	variable temp = 0
+	variable temp = 1
+	variable max = temp
 	for(i = 0; i < lSize; i+=1)
 		curr = stringfromlist(i, list, "\r")
-		temp = str2num(curr[strsearch(curr, ".r", 0) + 2])
+		temp = str2num(curr[strsearch(curr, ".r", 0) + 1, strlen(curr) - 1])//from the one after .r to the end, so it can be 
+																//as long as it needs to be in the double digits
 		if(temp > max)
 			max = temp
 		endif
@@ -63,10 +61,7 @@ Function stepDataAnalysis(IVCurves, FICurves, expNumber)
 	//get list of cell nums, for elem in each, call fi curve on sublist
 	variable ic, listSize = itemsInList(list)
 	Make /O /T=2 /N=0 cellNumbers	//ie, Cell1, Cell2, Cell3, etc
-	
-	
-	
-	
+
 	for(ic = 0; ic < listSize; ic +=1)
 		String currentItem = stringfromlist(ic, list, "\r")
 		variable cellPos  = strsearch(currentItem, "Cell", 0)	//cellPos is literally the index where cell's c is in the string. will use that as reference point.
@@ -90,11 +85,9 @@ Function stepDataAnalysis(IVCurves, FICurves, expNumber)
 		variable jd//just a counter
 		String sublist = ""//will add on to this the names of filenames of this particular umteenth cell
 		//making sublist 1; 2; 3
-		
 		for(jd = 0; jd < listSize; jd +=1)
 			if(stringmatch(stringfromlist(jd, list, "\r"), "*" + wName + "*"))
 				sublist += stringfromlist(jd, list) + "\r"
-				
 			endif
 		endfor
 		//add to cell Number
@@ -116,7 +109,7 @@ Function Curves(sublist, IVc, FIc, cellNum)//doesnt return anything, just adds v
 	for(i = 0; i < numNeg; i+=1)
 		wave current = $stringfromlist(i, sublist, "\r")
 		label = num2str((i - 5) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
-		IVc[cellNum][i][DimSize(IVc, 2) - 1] = IV(label, current)
+		IVc[cellNum][i][DimSize(IVc, 2) - 1] = findSSV(current)//IV(label, current)
 		FIc[cellNum][i][DimSize(FIc, 2) - 1] = FI(label, current)
 	endfor
 	//POS
@@ -124,49 +117,51 @@ Function Curves(sublist, IVc, FIc, cellNum)//doesnt return anything, just adds v
 	for(i = 0; i < numPos; i+=1)
 		wave current = $stringfromlist(i + numNeg, sublist, "\r")
 		label = num2str((i) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
-		IVc[cellNum][i + numNeg][DimSize(IVc, 2) - 1] = IV(label, current)
+		IVc[cellNum][i + numNeg][DimSize(IVc, 2) - 1] = findSSV(current)//IV(label, current)
 		FIc[cellNum][i + numNeg][DimSize(FIc, 2) - 1] = FI(label, current)//use label to take the decimal it returns and turn it back into the constituent parts
 	endfor
 end
-//to change colors for .r values, see the ModifyGraph for colors*****
+//to change colors for .r values, see the ModifyGraph for colors*
+
 Function DisplayCurves(curves, cellNum, type)// we are overlaying all .rs , rValue)//rValue = , .r2, .r3, .r4
 	wave curves
 	variable cellNum
 	variable type
+	//first, close all other graphs
 	
 	//Graphing each cell now
-	Make/O xWave ={-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	Make/O xWave ={-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90}
 	Make/U/O/N=15 yWave//spikes
 	variable i
-	variable r
 	variable rValue
 	for(rValue = 0; rValue < DimSize(curves, 2); rValue += 1)
 		for(i = 0; i < 15; i+=1)
-			variable current = (i - 5) * 10
-			yWave[i] = curves[cellNum - 1][i][rValue] * current
+			
+			yWave[i] = curves[cellNum - 1][i][rValue]//*current
 		endfor
-	//overlay all r values
-		variable electricCurrent = i - 5
+		//overlay all r values
+		String name
+		if(type == 1)
+			name =  "Cell_" + num2str(cellNum) + "_IV_Curve"
+			Display/K=1/N=$name
+			AppendToGraph/C=(mod(rValue * 9973, 65535), mod(rValue * 9973, 65535), mod(rValue * 9973, 65535))/W=$name xWave vs yWave 
+			Label left "Current_Injected_(pA)"
+			Label bottom "Voltage_(mV\u#2)"
+		elseif(type == 2)
+			name = "Cell_" + num2str(cellNum) + "_FI_Curve"
+			Display/K=1/N=$name
+//			the whole thing with the prime number and the mod is that
+//			it will not repeat colors for a long time and it won't overrun everything you feel?
+			variable current = (i - 5) * 10
+			yWave = yWave * current
+			AppendToGraph/C=(mod(i * 9973, 65535), mod(i * 9973, 65535), mod(i * 9973, 65535))/W=$name yWave vs xWave
+			Label left "Spikes"
+			Label bottom "Current_Injected (pA\u#2)"
+
+		else
+			print "This type of analysis (wave) not supported." 
+		endif
 	endfor
-	
-	String name
-	String l
-	String b
-	if(type == 1)
-		name =  "Cell_" + num2str(cellNum) + "_IV_Curve"
-		Display/K=1/N=$name yWave vs xWave	
-		label left "Current_Injected"
-		label bottom "Voltage"
-	elseif(type == 2)
-		name = "Cell_" + num2str(cellNum) + "_FI_Curve"
-		Display/K=1/N=$name yWave vs xWave	
-		l = "Spikes"
-		label left l
-		b = "Current_Injected"
-		label bottom b
-	else
-		print "This type of analysis (wave) not supported." 
-	endif
 end
 
 //spikes/current
@@ -182,7 +177,7 @@ Function/D FI(label, current)
 	findLevels/R=(3,3.5)/DEST=levels/Q/M=.001 current, level
 	
 	variable numEvoked= numpnts(levels)/2
-	
+	print "NUMEVOKED" + num2str(numEvoked)
 	Make /O/D/N=(numEvoked) evokedPeaks
 	Make /O/D/N=(numEvoked) evokedPeakTimes
 	
@@ -192,7 +187,7 @@ Function/D FI(label, current)
 	variable i
 	variable pos=0
 	
-	for (i=0;i<numpnts(levels);i+=2)
+	for (i=0;i<numpnts(levels) - 1;i+=2)
 		Variable xUp=levels[i]
 		Variable xDown=levels[i+1]
 		Wavestats/Q/R=(xUp,xDown) current
@@ -222,11 +217,11 @@ Function/D FI(label, current)
 		endfor	
 	
 	
-	print ("*********************\r" + nameofwave(current) + "- " + "\rFI: " + num2str(FI) + "\rspikes: " + num2str(spikes) )
-	print ("current injected: " + num2str(currentInjected))
+	//print ("*********************\r" + nameofwave(current) + "- " + "\rFI: " + num2str(FI) + "\rspikes: " + num2str(spikes) )
+	//print ("current injected: " + num2str(currentInjected))
 	
 	//Add to wave
-	return FI
+	return spikes //CHANGED FI FUNCTION TO RETURN SPIKES NOT FI**
 end
 //current/volts
 Function/D IV(label, current)
@@ -237,11 +232,7 @@ Function/D IV(label, current)
 	variable IV 
 	variable voltage = findSSV(current);//voltage is the steady state voltage
 	IV = electricalCurrent / voltage
-	////////////////////////////////////////////
-	////////////////////////////////////////////print "IV: " + num2str(IV)
-	////////////////////////////////////////////
-	////////////////////////////////////////////
-	////////////////////////////////////////////
+
 	return IV
 end
 //***************************************************************************************************************************
@@ -249,18 +240,19 @@ Function/D findSSV(w)
        wave w
        Make/O/D/N=1 output
        variable i
-	
+	//OVERLAY THE POINTS FOUNDHERE OVER
+	//THE ORIGINAL w WAVE TO SEE HOW WELL IT PICKS OUT POINTS
 	Make/O/D/N = (numpnts(w)) destWave
 	Differentiate w /D=destWave//differentiates wave, now its 0 when its a peak, pos when incr, neg when dec
 	Smooth 1, destwave//smoothed differentiated wave
-	findLevels/DEST=leveledWave/M=(x2pnt(w, .010))/Q destWave 1
+	findLevels/DEST=leveledWave/M=(x2pnt(w, .010))/Q destWave 1//MAKE THIS STD DEV
 	variable leveledWaveCount = 0
 	variable startTrial = x2pnt(w, 3)
 	variable endTrial = x2pnt(w, 3.5)
 	for(i = startTrial; i < endTrial; i+=1)
 		if(i == leveledWave[leveledWaveCount])
 			leveledWaveCount += 1//will go to check next value in leveledWave
-			i += 50//skip ahead by however much
+			i += 50//MAKE DYNAMIC
 		else
 			InsertPoints numpnts(output), 1, output
 			output[numpnts(output) - 1] = w[i]
