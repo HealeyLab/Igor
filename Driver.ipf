@@ -1,17 +1,17 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 //Author: Dan Pollak
 //1/4/2016
-
+	
 Function driver_batch()// use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
 	//for spont, do something like below for stepDataAnalysis()
-	Make /D /O /N=(0,15, 1) IVCurves//dim=0: Cell number dim=1: IV dim=2: .r
-	Make /D /O /N=(0,15, 1) FICurves//dim=0: Cell number dim=1: FI dim=2: .r
-	variable NUMBER_OF_TRIALS = getTrials()
+	Make /D /O /N=(0,15, 1) IVCurves//dim=0: Cell number	 dim=1: IV	 dim=2: .r
+	Make /D /O /N=(0,15, 1) FICurves//dim=0: Cell number	 dim=1: FI	 dim=2: .r
+	variable NUMBER_OF_TRIALS = 2//getTrials()
 	variable i
 	String expNumber
-	print "IV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\t\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
-	print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
-	print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
+	//print "IV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\t\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
+	//print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
+	//print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
 	
 	for(i = 1; i <= NUMBER_OF_TRIALS; i+=1)
 		expNumber = ".r" + num2str(i)
@@ -26,13 +26,15 @@ Function driver_batch()// use of *_batch here will allow us to use preexisting c
 			//don't add to third dimension first time, that's been taken care of
 			stepDataAnalysis(IVCurves, FICurves, "")//since it is not.r1, its just blank 
 		endif
+		print "i = " + num2str(i)
 	endfor
-	print "***********************&&&&&&\r\tIV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
-	print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
-	print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
+	//print "***********************&&&&&&\r\tIV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
+	//print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
+	//print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
+	
 	//for DisplayCurves, 1 = IV, 2=FI
-	DisplayCurves(IVCurves, 1, 1)//input the .r and cell #'s as position not index, will be translated to index in function.
-	DisplayCurves(FICurves, 1, 2);
+	//DisplayCurves(IVCurves, 1, 1)//input the .r and cell #'s as position not index, will be translated to index in function.
+	//DisplayCurves(FICurves, 1, 2);
 end
 //***************************************************************************************************************************
 Function getTrials()
@@ -56,16 +58,18 @@ Function stepDataAnalysis(IVCurves, FICurves, expNumber)
 	wave FICurves
 	wave IVCurves
 	String expNumber
-	//eventually, have it generate a wave per cell
-	String list = WaveList("*Cell*pa" + expNumber, "\r", "")//list of cells, includes .r2, .r3...
-	//get list of cell nums, for elem in each, call fi curve on sublist
-	variable ic, listSize = itemsInList(list)
+	
+	String list = WaveList("*Cell*pa" + expNumber, "\r", "")//list of cells, includes 1
+	
+	//get list of cell nums, for elem in each
+	variable ic, listSize = itemsInList(list, "\r")
 	Make /O /T=2 /N=0 cellNumbers	//ie, Cell1, Cell2, Cell3, etc
-
+	print listSize
 	for(ic = 0; ic < listSize; ic +=1)
 		String currentItem = stringfromlist(ic, list, "\r")
+		
 		variable cellPos  = strsearch(currentItem, "Cell", 0)	//cellPos is literally the index where cell's c is in the string. will use that as reference point.
-
+		
 		//Basically, the last part of the for loop is extracting the cell number. Here's how we do it:
 		//while next char is not ".", keep adding on to the number. It'll either be 1 or 2 digits long, but this will always work
 		//ex, if it is Cell15.50pa, it will add 1, then 5, to string cellNum, so it is 15.
@@ -75,25 +79,29 @@ Function stepDataAnalysis(IVCurves, FICurves, expNumber)
 			cellNum += currentItem[cellPos + 4 + i] //cell is 4 letters long
 			i += 1
 		while(!stringmatch(currentItem[cellPos + 4 + i], "."))
+		//print currentItem + "   " + cellNum
 		InsertPoints numpnts(cellNumbers), 1, cellNumbers
 		cellNumbers[numpnts(cellNumbers) - 1] = cellNum
 	endfor
 	
-	//now call Curves on a custom list of strings corresponding to waves whose names contain "Cell" + cellNames[i]
-	for(ic = 0; ic < numpnts(cellNumbers); ic+=1)
-		String wName = "Cell" + cellNumbers[ic]//This is the umpteenth cell patched onto in the experiment
+	variable numOfCells = str2num(cellNumbers[numpnts(cellNumbers) - 1])//largest element there, will be number of cells
+	//now call Curves on a custom list of strings corresponding to waves whose names contain "Cell" + 1, 2, ...num Of cells
+	for(ic = 0; ic < numOfCells; ic+=1)
+		String wName = "Cell" + num2str(ic + 1)//This is the umpteenth cell patched onto in the experiment
 		variable jd//just a counter
-		String sublist = ""//will add on to this the names of filenames of this particular umteenth cell
+		String sublist = ""//will add on to this the names of filenames of this particular umpteenth cell
 		//making sublist 1; 2; 3
 		for(jd = 0; jd < listSize; jd +=1)
 			if(stringmatch(stringfromlist(jd, list, "\r"), "*" + wName + "*"))
 				sublist += stringfromlist(jd, list) + "\r"
 			endif
 		endfor
+		//at this point, sublist is the lis tof cells with the same .r and the same Cell#, so it should just be 15 long. But it's not.
+		print "print sublist *********************************" + num2str(ic) + "\r" +  sublist + "print sublist*****************************************"
 		//add to cell Number
 		InsertPoints/M=0 DimSize(IVCurves, 0), 1, IVCurves
 		InsertPoints/M=0 DimSize(FICurves, 0), 1, FICurves
-		Curves(sublist, IVCurves, FICurves, ic)
+		//Curves(sublist, IVCurves, FICurves, ic)
 	endfor
 end
 
@@ -111,6 +119,7 @@ Function Curves(sublist, IVc, FIc, cellNum)//doesnt return anything, just adds v
 		label = num2str((i - 5) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
 		IVc[cellNum][i][DimSize(IVc, 2) - 1] = findSSV(current)//IV(label, current)
 		FIc[cellNum][i][DimSize(FIc, 2) - 1] = FI(label, current)
+		//print nameofwave(current) + " curr"
 	endfor
 	//POS
 	variable numPos = 10 //bc 0 1 2 3 4 5 6  7 8 9
@@ -119,16 +128,15 @@ Function Curves(sublist, IVc, FIc, cellNum)//doesnt return anything, just adds v
 		label = num2str((i) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
 		IVc[cellNum][i + numNeg][DimSize(IVc, 2) - 1] = findSSV(current)//IV(label, current)
 		FIc[cellNum][i + numNeg][DimSize(FIc, 2) - 1] = FI(label, current)//use label to take the decimal it returns and turn it back into the constituent parts
+		//print nameofwave(current) + " curr"
 	endfor
 end
-//to change colors for .r values, see the ModifyGraph for colors*
 
+//to change colors for .r values, see the ModifyGraph for colors*
 Function DisplayCurves(curves, cellNum, type)// we are overlaying all .rs , rValue)//rValue = , .r2, .r3, .r4
 	wave curves
 	variable cellNum
-	variable type
-	//first, close all other graphs
-	
+	variable type	
 	//Graphing each cell now
 	Make/O xWave ={-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90}
 	Make/U/O/N=15 yWave//spikes
@@ -136,28 +144,34 @@ Function DisplayCurves(curves, cellNum, type)// we are overlaying all .rs , rVal
 	variable rValue
 	for(rValue = 0; rValue < DimSize(curves, 2); rValue += 1)
 		for(i = 0; i < 15; i+=1)
-			
-			yWave[i] = curves[cellNum - 1][i][rValue]//*current
+		//3d wave to one
+			yWave[i] = curves[cellNum - 1][i][rValue]
 		endfor
 		//overlay all r values
 		String name
+		
+		//IV
 		if(type == 1)
 			name =  "Cell_" + num2str(cellNum) + "_IV_Curve"
 			Display/K=1/N=$name
 			AppendToGraph/C=(mod(rValue * 9973, 65535), mod(rValue * 9973, 65535), mod(rValue * 9973, 65535))/W=$name xWave vs yWave 
 			Label left "Current_Injected_(pA)"
 			Label bottom "Voltage_(mV\u#2)"
+			SavePICT/O/SNAP=1/E=-5/P=$"C:Users:danieljonathan:Desktop:Healey:analyzed_files" as name//"C:\\Users\\danieljonathan\\Desktop\\Healey\\analyzed_files"
+			KillWindow $name
+		
+		//FI
 		elseif(type == 2)
 			name = "Cell_" + num2str(cellNum) + "_FI_Curve"
 			Display/K=1/N=$name
 //			the whole thing with the prime number and the mod is that
 //			it will not repeat colors for a long time and it won't overrun everything you feel?
 			variable current = (i - 5) * 10
-			yWave = yWave * current
 			AppendToGraph/C=(mod(i * 9973, 65535), mod(i * 9973, 65535), mod(i * 9973, 65535))/W=$name yWave vs xWave
 			Label left "Spikes"
 			Label bottom "Current_Injected (pA\u#2)"
-
+			SavePICT/O/SNAP=1/E=-5/P=$"C:\\Users\\danieljonathan\\Desktop\\Healey\\analyzed_files" as name//_PictGallery_//"C:\\Users\\danieljonathan\\Desktop\\Healey\\analyzed_files"
+			KillWindow $name
 		else
 			print "This type of analysis (wave) not supported." 
 		endif
@@ -177,7 +191,7 @@ Function/D FI(label, current)
 	findLevels/R=(3,3.5)/DEST=levels/Q/M=.001 current, level
 	
 	variable numEvoked= numpnts(levels)/2
-	print "NUMEVOKED" + num2str(numEvoked)
+	//print "NUMEVOKED" + num2str(numEvoked)
 	Make /O/D/N=(numEvoked) evokedPeaks
 	Make /O/D/N=(numEvoked) evokedPeakTimes
 	
@@ -213,7 +227,7 @@ Function/D FI(label, current)
 	for (k=0;k<numpnts(evokedPeakTimes)-1;k+=1)
 		variable interval
 		interval= evokedPeakTimes[k+1]-evokedPeakTimes[k]
-		print interval
+		//print interval
 		endfor	
 	
 	
