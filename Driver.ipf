@@ -2,16 +2,26 @@
 //Author: Dan Pollak
 //1/4/2016
 	
+Menu "Curves"
+	"Run cStep Analysis", driver_batch()
+end
+		
 Function driver_batch()// use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
 	//for spont, do something like below for stepDataAnalysis()
 	Make /D /O /N=(0,15, 1) IVCurves//dim=0: Cell number	 dim=1: IV	 dim=2: .r
 	Make /D /O /N=(0,15, 1) FICurves//dim=0: Cell number	 dim=1: FI	 dim=2: .r
-	variable NUMBER_OF_TRIALS = 2//getTrials()
+	
+	variable NUMBER_OF_TRIALS, numOfCells
+	String nameOfExperiment
+	Prompt numOfCells "Enter number of cells"
+	Prompt NUMBER_OF_TRIALS "Enter number of trials"
+	Prompt nameOfExperiment "Enter the date this experiment was undertaken (for exporting purporses)"
+	DoPrompt "Cells, trials, name of experiment", numOfCells, NUMBER_OF_TRIALS, nameOfExperiment
 	variable i
 	String expNumber
-	//print "IV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\t\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
-	//print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
-	//print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
+	print "IV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\t\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
+	print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
+	print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
 	
 	for(i = 1; i <= NUMBER_OF_TRIALS; i+=1)
 		expNumber = ".r" + num2str(i)
@@ -21,87 +31,43 @@ Function driver_batch()// use of *_batch here will allow us to use preexisting c
 			//add layer to IV and FI Curves
 			InsertPoints/M=2 DimSize(IVCurves, 2), 1, IVCurves
 			InsertPoints/M=2 DimSize(FICurves, 2), 1, FICurves
-			stepDataAnalysis(IVCurves, FICurves, expNumber) // ,.r2, .r3
+			stepDataAnalysis(IVCurves, FICurves, expNumber, numOfCells) // ,.r2, .r3
 		else
 			//don't add to third dimension first time, that's been taken care of
-			stepDataAnalysis(IVCurves, FICurves, "")//since it is not.r1, its just blank 
+			stepDataAnalysis(IVCurves, FICurves, "", numOfCells)//since it is not.r1, its just blank 
 		endif
-		print "i = " + num2str(i)
+		
 	endfor
-	//print "***********************&&&&&&\r\tIV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
-	//print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
-	//print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
+	print "***********************&&&&&&\r\tIV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
+	print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
+	print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
+	
+	Save/C/O/P=export_to_matlab FICurves as nameOfExperiment + "FICurves.ibw"
+	Save/C/O/P=export_to_matlab IVCurves as nameOfExperiment + "IVCurves.ibw"
 	
 	//for DisplayCurves, 1 = IV, 2=FI
 	//DisplayCurves(IVCurves, 1, 1)//input the .r and cell #'s as position not index, will be translated to index in function.
 	//DisplayCurves(FICurves, 1, 2);
 end
 //***************************************************************************************************************************
-Function getTrials()
-	String list = WaveList("*Cell*.r*", "\r", "")
-	variable lSize = itemsInList(list)
-	variable i
-	String curr
-	variable temp = 1
-	variable max = temp
-	for(i = 0; i < lSize; i+=1)
-		curr = stringfromlist(i, list, "\r")
-		temp = str2num(curr[strsearch(curr, ".r", 0) + 1, strlen(curr) - 1])//from the one after .r to the end, so it can be 
-																//as long as it needs to be in the double digits
-		if(temp > max)
-			max = temp
-		endif
-	endfor
-	return max
-end
-Function stepDataAnalysis(IVCurves, FICurves, expNumber)
+Function stepDataAnalysis(IVCurves, FICurves, expNumber, numOfCells)
 	wave FICurves
 	wave IVCurves
-	String expNumber
+	String expNumber//either "" or ".r\#"
+	variable numOfCells
+	variable ic
 	
-	String list = WaveList("*Cell*pa" + expNumber, "\r", "")//list of cells, includes 1
 	
-	//get list of cell nums, for elem in each
-	variable ic, listSize = itemsInList(list, "\r")
-	Make /O /T=2 /N=0 cellNumbers	//ie, Cell1, Cell2, Cell3, etc
-	print listSize
-	for(ic = 0; ic < listSize; ic +=1)
-		String currentItem = stringfromlist(ic, list, "\r")
-		
-		variable cellPos  = strsearch(currentItem, "Cell", 0)	//cellPos is literally the index where cell's c is in the string. will use that as reference point.
-		
-		//Basically, the last part of the for loop is extracting the cell number. Here's how we do it:
-		//while next char is not ".", keep adding on to the number. It'll either be 1 or 2 digits long, but this will always work
-		//ex, if it is Cell15.50pa, it will add 1, then 5, to string cellNum, so it is 15.
-		variable i = 0
-		String cellNum = ""
-		do
-			cellNum += currentItem[cellPos + 4 + i] //cell is 4 letters long
-			i += 1
-		while(!stringmatch(currentItem[cellPos + 4 + i], "."))
-		//print currentItem + "   " + cellNum
-		InsertPoints numpnts(cellNumbers), 1, cellNumbers
-		cellNumbers[numpnts(cellNumbers) - 1] = cellNum
-	endfor
-	
-	variable numOfCells = str2num(cellNumbers[numpnts(cellNumbers) - 1])//largest element there, will be number of cells
 	//now call Curves on a custom list of strings corresponding to waves whose names contain "Cell" + 1, 2, ...num Of cells
 	for(ic = 0; ic < numOfCells; ic+=1)
-		String wName = "Cell" + num2str(ic + 1)//This is the umpteenth cell patched onto in the experiment
-		variable jd//just a counter
-		String sublist = ""//will add on to this the names of filenames of this particular umpteenth cell
-		//making sublist 1; 2; 3
-		for(jd = 0; jd < listSize; jd +=1)
-			if(stringmatch(stringfromlist(jd, list, "\r"), "*" + wName + "*"))
-				sublist += stringfromlist(jd, list) + "\r"
-			endif
-		endfor
+		String sublist = WaveList("*Cell" + num2str(ic + 1) + "*pa" + expNumber, "\r", "")//cells per .r
 		//at this point, sublist is the lis tof cells with the same .r and the same Cell#, so it should just be 15 long. But it's not.
-		print "print sublist *********************************" + num2str(ic) + "\r" +  sublist + "print sublist*****************************************"
-		//add to cell Number
+		print "print sublist *********************************" + num2str(ic + 1) + "\r" +  sublist + "print sublist*****************************************"
 		InsertPoints/M=0 DimSize(IVCurves, 0), 1, IVCurves
 		InsertPoints/M=0 DimSize(FICurves, 0), 1, FICurves
-		//Curves(sublist, IVCurves, FICurves, ic)
+		if(!StringMatch(sublist, ""))
+		Curves(sublist, IVCurves, FICurves, ic)
+		endif
 	endfor
 end
 
@@ -149,16 +115,22 @@ Function DisplayCurves(curves, cellNum, type)// we are overlaying all .rs , rVal
 		endfor
 		//overlay all r values
 		String name
-		
+		//NewPath thisPath "C:Users:danieljonathan:Desktop:Healey:analyzed_files"
 		//IV
 		if(type == 1)
 			name =  "Cell_" + num2str(cellNum) + "_IV_Curve"
 			Display/K=1/N=$name
 			AppendToGraph/C=(mod(rValue * 9973, 65535), mod(rValue * 9973, 65535), mod(rValue * 9973, 65535))/W=$name xWave vs yWave 
-			Label left "Current_Injected_(pA)"
-			Label bottom "Voltage_(mV\u#2)"
-			SavePICT/O/SNAP=1/E=-5/P=$"C:Users:danieljonathan:Desktop:Healey:analyzed_files" as name//"C:\\Users\\danieljonathan\\Desktop\\Healey\\analyzed_files"
+			Label left "Current_Injected_(pA)" 
+			Label bottom "Voltage_(mV\u#2)" 
+			//SavePICT/O/SNAP=2/E=-5/P=thisPath as name//SaveGraphCopy/O/W=$name/P=thisPath as name//SavePICT/O/SNAP=1/E=-5/P=$"C:Users:danieljonathan:Desktop:Healey:analyzed_files" as name
+			variable yes
+			Prompt yes "continue?"
+			DoPrompt "input info"
+//			KillFreeAxis left
+//			KillFreeAxis bottom
 			KillWindow $name
+			
 		
 		//FI
 		elseif(type == 2)
@@ -168,10 +140,16 @@ Function DisplayCurves(curves, cellNum, type)// we are overlaying all .rs , rVal
 //			it will not repeat colors for a long time and it won't overrun everything you feel?
 			variable current = (i - 5) * 10
 			AppendToGraph/C=(mod(i * 9973, 65535), mod(i * 9973, 65535), mod(i * 9973, 65535))/W=$name yWave vs xWave
-			Label left "Spikes"
-			Label bottom "Current_Injected (pA\u#2)"
-			SavePICT/O/SNAP=1/E=-5/P=$"C:\\Users\\danieljonathan\\Desktop\\Healey\\analyzed_files" as name//_PictGallery_//"C:\\Users\\danieljonathan\\Desktop\\Healey\\analyzed_files"
+			Label left "Spikes" 
+			Label bottom "Current_Injected (pA\u#2)" 
+			//SavePICT/O/SNAP=1/E=-5/P=thisPath as name//SaveGraphCopy/O/W=$name/P=thisPath as name//
+			variable yep
+			Prompt yep "continue?"
+			DoPrompt "input info"
+			KillFreeAxis left
+			//KillFreeAxis bottom
 			KillWindow $name
+
 		else
 			print "This type of analysis (wave) not supported." 
 		endif
