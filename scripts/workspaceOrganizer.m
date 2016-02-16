@@ -25,6 +25,12 @@ FImales = [FIgroup1males; FIgroup2males];
 FIgroup1females = [];
 FIgroup2females = FIMeg;
 FIfemales = [FIgroup1females; FIgroup2females];
+
+FIgroup1females = [FIgroup2females; FIgroup2females];
+FIgroup1males = [FIgroup2males; FIgroup2males];
+
+FIgroup1 = [FIgroup1females; FIgroup1males];
+FIgroup2 = [FIgroup2females; FIgroup2males];
 %%
 %IV
 
@@ -49,25 +55,30 @@ IVmales = [IVgroup1males; IVgroup2males];
 IVgroup1females = [];
 IVgroup2females = IVMeg;
 IVfemales = [IVgroup1females; IVgroup2females];
+
+IVgroup1 = [IVgroup1females; IVgroup1males];
+IVgroup2 = [IVgroup2females; IVgroup2males];
 %% Here's what happened so far
 %I concatenated the matrices vertically. Right now, the vectors I want to
 %use are sideways. So in the partition below, I will correct this with the
 %' operator.
 
-%% Graphing. I may want to call figure from outside the for loop.
-xAxis = [-50:10:90];
-    %going through each .r value
-    for i=1:numel(IVmales(1,1,:))
-        figure;
-        %going through each cell#
-        %graph each vector perpendicular to the xz plane
-        IVYAxis = IVmales(:,:,i)';
-        
-        plot(xAxis, IVYAxis)
-        hold on;
-        title(strcat(IVFilename, ' trial ', num2str(i)));
-        ylabel('mV')
-        xlabel('pA')
-        
-        %savefig('IVmales.fig'));
-    end
+%% Graphing. I'll have one for loop, just change the field up below.
+toGraph = IVgroup1;
+name = 'IVgroup1';
+xAxis = -50:10:90;
+%going through each .r value
+figure;
+for i=1:numel(toGraph(1,1,:))
+    %going through each cell#
+    %graph each vector perpendicular to the xz plane
+    IVYAxis = toGraph(:,:,i)';
+    
+    plot(xAxis, IVYAxis)
+    hold on;
+    title(name);
+    ylabel('mV')
+    xlabel('pA')
+    
+    savefig(strcat(name, '.fig'));
+end
