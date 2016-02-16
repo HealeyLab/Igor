@@ -22,44 +22,44 @@ for k=1:N
     
     %%
     %going through each .r value
-%     for i=1:numel(IV(1,1,:))
-%         figure;
-%         %going through each cell#
-%         %graph each vector perpendicular to the xz plane
-%         IVYAxis = IV(:,:,i);
-%         
-%         plot(IVYAxis, xAxis)
-%         hold on;
-%         title(strcat(IVFilename, ' trial ', num2str(i)));
-%         ylabel('pA')
-%         xlabel('mV')
-%         
-%         savefig(strcat(IVFilename, '.fig'));
-%         
-%     end
-%     
-    for i=1:numel(FI(1,1,:))
-%         %going through each cell#
-%         figure;
-%         %graph each file along the xz plane
-%         %this takes the ith "page"
-%         FIYAxis = FI(:,:,i);
-%         
-%         plot(xAxis, FIYAxis)
-%         hold on;
-%         
-%         title(strcat(FIFilename, ' trial ', num2str(i)));
-%         xlabel('pA');
-%         ylabel('Hz');
-%         
-%         savefig(strcat(FIFilename, '.fig'));
+    for i=1:numel(IV(1,1,:))
+        figure;
+        %going through each cell#
+        %graph each vector perpendicular to the xz plane
+        IVYAxis = IV(:,:,i);
         
-        strcat(IVFilename, ':')
-        for j=1:numel(FI(:,1,1))%go through number of cells
-            %printing the num of spikes present
-            currentCell = FI(j,:,i);%vector, column, layer
-            currentCell%just displays the vector
-        end
+        plot( xAxis, IVYAxis')%we really need the '
+        hold on;
+        title(strcat(IVFilename, ' trial ', num2str(i)));
+        ylabel('mV')
+        xlabel('pA')
+        
+        savefig(strcat(IVFilename, '.fig'));
+        
+    end
+    
+    for i=1:numel(FI(1,1,:))
+        %going through each cell#
+        figure;
+        %graph each file along the xz plane
+        %this takes the ith "page"
+        FIYAxis = FI(:,:,i);
+        
+        plot(xAxis, FIYAxis')
+        hold on;
+        
+        title(strcat(FIFilename, ' trial ', num2str(i)));
+        xlabel('pA');
+        ylabel('Hz');
+        
+        savefig(strcat(FIFilename, '.fig'));
+%         
+%         strcat(IVFilename, ':')
+%         for j=1:numel(FI(:,1,1))%go through number of cells
+%             %printing the num of spikes present
+%             currentCell = FI(j,:,i);%vector, column, layer
+%             currentCell%just displays the vector
+%         end
         
     end
 
