@@ -63,22 +63,27 @@ IVgroup2 = [IVgroup2females; IVgroup2males];
 %use are sideways. So in the partition below, I will correct this with the
 %' operator.
 
-%% Graphing. I'll have one for loop, just change the field up below.
-toGraph = IVgroup1;
-name = 'IVgroup1';
+%% Graphing. just change the field up below.
+toGraph = IVgroup2;
+name = 'IVgroup2';
 xAxis = -50:10:90;
-%going through each .r value
-figure;
-for i=1:numel(toGraph(1,1,:))
-    %going through each cell#
-    %graph each vector perpendicular to the xz plane
-    IVYAxis = toGraph(:,:,i)';
-    
-    plot(xAxis, IVYAxis)
-    hold on;
-    title(name);
+%going through each cell#
+%graph each vector perpendicular to the xz plane
+
+plot(xAxis, mean(toGraph, 3)')
+hold on;
+title(name);
+ax = gca;
+ax.XTick = [-50:10:90];
+ax.XTickLabelRotation = 45;
+if(findstr(name, 'IV') ~= 0)
     ylabel('mV')
     xlabel('pA')
-    
-    savefig(strcat(name, '.fig'));
+    ax.YTick = [-1.2:0.01:0];
+    ylim([-.12, 0])
+elseif(findstr(name, 'IV') ~= 0)
+    ylabel('Hz')
+    xlabel('pa')
 end
+savefig(strcat(name, '.fig'));
+
