@@ -1,5 +1,5 @@
 # Igor
-<p>Many thanks to Jakub Bialek for his library</p>
+<h1>Many thanks to Jakub Bialek for the use of his library.</h1>
 <h0>Copyright © 2009, Jakub Bialek
 All rights reserved.
 
