@@ -4,8 +4,33 @@
 	
 Menu "Curves"
 	"Run cStep Analysis", driver_batch()
+	"Display Firing Rates", DisplayFR()
+	"Ooh, Killem", Killem()
 end
-		
+Function DisplayFR()
+	String sublist = WaveList("*Cell*" + "*pa*", "\r", "")//includes all cells b/c of the *pa*
+	print "sublist:\r" +  sublist
+	variable ic
+	for(ic = 10; ic < 13; ic+=1) //itemsInList(sublist, "\r")
+		String name = StringFromList(ic, sublist, "\r")
+		variable currInj = mod(ic, 15)*10 - 50
+		variable spikes = FI(num2str(currInj), $name)
+		variable FR = spikes/.5 //the mod gets us the current injected based on place in list
+		Display/K=1/N=name $name
+		TextBox/N=ic/A=LB "Firing rate:" + num2str(FR) + "Hz\rSpikes: " + num2str(spikes)
+	endfor
+	if(StringMatch(sublist, ""))
+		print "no waves found"
+	endif
+end
+Function Killem()
+	String sublist = WaveList("*Cell*" + "*pa*", "\r", "")//includes all cells b/c of the *pa*
+	variable ic
+	for(ic = 0; ic<ItemsInList(sublist, "\r"); ic += 1)
+		String curr = ("root:'" + StringFromList(ic, sublist, "\r") + "'")//StringFromList(ic, sublist, "\r")
+		KillWindow $curr
+	endfor
+end
 Function driver_batch()// use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
 	//for spont, do something like below for stepDataAnalysis()
 	Make /D /O /N=(0,15, 1) IVCurves//dim=0: Cell number	 dim=1: IV	 dim=2: .r
@@ -41,13 +66,15 @@ Function driver_batch()// use of *_batch here will allow us to use preexisting c
 	print "***********************&&&&&&\r\tIV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
 	print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
 	print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
-	
+
+	NewPath/O export_to_matlab "C:Users:danieljonathan:Desktop:Healey data pipeline (finished product):igor_ibws" 
 	Save/C/O/P=export_to_matlab FICurves as nameOfExperiment + "FICurves.ibw"
 	Save/C/O/P=export_to_matlab IVCurves as nameOfExperiment + "IVCurves.ibw"
-	
-	//for DisplayCurves, 1 = IV, 2=FI
-	//DisplayCurves(IVCurves, 1, 1)//input the .r and cell #'s as position not index, will be translated to index in function.
-	//DisplayCurves(FICurves, 1, 2);
+	//NewPath/O export_to_matlab "C:Users:danieljonathan:Desktop:Healey:analyzed_files"
+	//for(i = 0; i < numOfCells; i+=1)
+	//	DisplayCurves(IVCurves, i,1)
+	//	DisplayCurves(FICurves, i,2)
+	//endfor
 end
 //***************************************************************************************************************************
 Function stepDataAnalysis(IVCurves, FICurves, expNumber, numOfCells)
@@ -56,8 +83,7 @@ Function stepDataAnalysis(IVCurves, FICurves, expNumber, numOfCells)
 	String expNumber//either "" or ".r\#"
 	variable numOfCells
 	variable ic
-	
-	
+		
 	//now call Curves on a custom list of strings corresponding to waves whose names contain "Cell" + 1, 2, ...num Of cells
 	for(ic = 0; ic < numOfCells; ic+=1)
 		String sublist = WaveList("*Cell" + num2str(ic + 1) + "*pa" + expNumber, "\r", "")//cells per .r
@@ -81,20 +107,24 @@ Function Curves(sublist, IVc, FIc, cellNum)//doesnt return anything, just adds v
 	String label//currentInjected = label
 	//NEG
 	for(i = 0; i < numNeg; i+=1)
-		wave current = $stringfromlist(i, sublist, "\r")
-		label = num2str((i - 5) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
-		IVc[cellNum][i][DimSize(IVc, 2) - 1] = findSSV(current)//IV(label, current)
-		FIc[cellNum][i][DimSize(FIc, 2) - 1] = FI(label, current)
-		//print nameofwave(current) + " curr"
+		if(WaveExists($stringfromlist(i, sublist, "\r")))
+			wave current = $stringfromlist(i, sublist, "\r")
+			label = num2str((i - 5) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
+			IVc[cellNum][i][DimSize(IVc, 2) - 1] = findSSV(current)//IV(label, current)
+			FIc[cellNum][i][DimSize(FIc, 2) - 1] = FI(label, current)
+			//print nameofwave(current) + " curr"
+		endif
 	endfor
 	//POS
 	variable numPos = 10 //bc 0 1 2 3 4 5 6  7 8 9
 	for(i = 0; i < numPos; i+=1)
-		wave current = $stringfromlist(i + numNeg, sublist, "\r")
-		label = num2str((i) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
-		IVc[cellNum][i + numNeg][DimSize(IVc, 2) - 1] = findSSV(current)//IV(label, current)
-		FIc[cellNum][i + numNeg][DimSize(FIc, 2) - 1] = FI(label, current)//use label to take the decimal it returns and turn it back into the constituent parts
+		if(WaveExists($stringfromlist(i + numNeg, sublist, "\r")))//in case it doesn't go up as far as you'd guess
+			wave current = $stringfromlist(i + numNeg, sublist, "\r")
+			label = num2str((i) * 10)//bc for i = 1, 1- 6 = -5 times 10 is -50, i = 2 is -40 etc //DEPENDS ON CONSISTENT LABELING
+			IVc[cellNum][i + numNeg][DimSize(IVc, 2) - 1] = findSSV(current)//IV(label, current)
+			FIc[cellNum][i + numNeg][DimSize(FIc, 2) - 1] = FI(label, current)//use label to take the decimal it returns and turn it back into the constituent parts
 		//print nameofwave(current) + " curr"
+		endif
 	endfor
 end
 
