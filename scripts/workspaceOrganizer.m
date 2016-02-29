@@ -1,29 +1,41 @@
-%Author: Dan Pollak
+%% Author: Dan Pollak
+%Script to organize workspace into appropriate quadrants
+%%
 clear all
 close all
-
+!synclient HorizTwoFingerScroll=0
 %%
 %FI
 FIMeg = IBWread('8.24.15FICurves.ibw');
 FIMeg = FIMeg.y;
+FIMeg = FIMeg(1:end/2, :, :);%because it doubles it for some reason
+
 FIBeethoven = IBWread('8.26.15FICurves.ibw');
 FIBeethoven = FIBeethoven.y;
+FIBeethoven = FIBeethoven(1:end/2, :, :);
+
 FIOpus = IBWread('8.27.15FICurves.ibw');
 FIOpus = FIOpus.y;
+FIOpus = FIOpus(1:end/2, :, :);%because it doubles it for some reason
+
 FIMname = IBWread('9.2.15FICurves.ibw');
 FIMname = FIMname.y;
+FIMname = FIMname(1:end/2, :, :);%because it doubles it for some reason
+
 FILincoln = IBWread('9.3.15FICurves.ibw');
 FILincoln = FILincoln.y;
-%FISelene = IBWread('9.1.15FICurves.ibw');
-%FISelene = FISelene.y;
+FILincoln = FILincoln(1:end/2, :, :);%because it doubles it for some reason
+
+FISelene = IBWread('9.1.15FICurves.ibw');
+FISelene = cat(3, FISelene.y, zeros(8,15));
+%FISelene = FISelene(1:end/2, :, :);%because it doubles it for some reason
 
 FIgroup1males = [FIBeethoven; FIOpus];
 FIgroup2males = [FIMname; FILincoln];
 FImales = [FIgroup1males; FIgroup2males];
 
-%FIgroup1females = [FISelene'];
-FIgroup1females = [];
-FIgroup2females = FIMeg;
+FIgroup1females = [FISelene];
+FIgroup2females = [FIMeg];
 FIfemales = [FIgroup1females; FIgroup2females];
 
 FIgroup1females = [FIgroup2females; FIgroup2females];
@@ -36,23 +48,33 @@ FIgroup2 = [FIgroup2females; FIgroup2males];
 
 IVMeg = IBWread('8.24.15IVCurves.ibw');
 IVMeg = IVMeg.y;
+IVMeg = IVMeg(1:end/2, :, :);%because it doubles it for some reason
+
 IVBeethoven = IBWread('8.26.15IVCurves.ibw');
 IVBeethoven = IVBeethoven.y;
+IVBeethoven = IVBeethoven(1:end/2, :, :);%because it doubles it for some reason
+
 IVOpus = IBWread('8.27.15IVCurves.ibw');
 IVOpus = IVOpus.y;
+IVOpus = IVOpus(1:end/2, :, :);%because it doubles it for some reason
+
 IVMname = IBWread('9.2.15IVCurves.ibw');
 IVMname = IVMname.y;
+IVMname = IVMname(1:end/2, :, :);%because it doubles it for some reason
+
 IVLincoln = IBWread('9.3.15IVCurves.ibw');
 IVLincoln = IVLincoln.y;
-%IVSelene = IBWread('9.1.15IVCurves.ibw');;
-%IVSelene = IVSelene.y;
+IVLincoln = IVLincoln(1:end/2, :, :);%because it doubles it for some reason
+
+IVSelene = IBWread('9.1.15IVCurves.ibw');
+IVSelene = cat(3, IVSelene.y, zeros(8,15));
+%IVSelene = IVSelene(1:end/2, :, :);%because it doubles it for some reason
 
 IVgroup1males = [IVBeethoven; IVOpus];
 IVgroup2males = [IVMname; IVLincoln];
 IVmales = [IVgroup1males; IVgroup2males];
 
-%IVgroup1females = [IVSelene];
-IVgroup1females = [];
+IVgroup1females = [IVSelene];
 IVgroup2females = IVMeg;
 IVfemales = [IVgroup1females; IVgroup2females];
 
@@ -64,24 +86,24 @@ IVgroup2 = [IVgroup2females; IVgroup2males];
 %' operator.
 
 %% Graphing. just change the field up below.
-toGraph = IVgroup2;
-name = 'IVgroup2';
+toGraph = IVfemales;
+name = 'IVFemales';
 xAxis = -50:10:90;
 %going through each cell#
 %graph each vector perpendicular to the xz plane
 
-plot(xAxis, mean(toGraph, 3)')
+figure; plot(xAxis, mean(toGraph, 3)', 'LineWidth', 1.25)
 hold on;
 title(name);
 ax = gca;
-ax.XTick = [-50:10:90];
+ax.XTick = -50:10:90;
 ax.XTickLabelRotation = 45;
-if(findstr(name, 'IV') ~= 0)
+if(strfind(name, 'IV') ~= 0)
     ylabel('mV')
     xlabel('pA')
-    ax.YTick = [-1.2:0.01:0];
+    ax.YTick = -1.2:0.01:0;
     ylim([-.12, 0])
-elseif(findstr(name, 'IV') ~= 0)
+elseif(strfind(name, 'IV') ~= 0)
     ylabel('Hz')
     xlabel('pa')
 end
