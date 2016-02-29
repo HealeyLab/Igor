@@ -2,8 +2,7 @@
 %Script to organize workspace into appropriate quadrants
 %%
 clear all
-close all
-!synclient HorizTwoFingerScroll=0
+%close all
 %%
 %FI
 FIMeg = IBWread('8.24.15FICurves.ibw');
@@ -37,9 +36,6 @@ FImales = [FIgroup1males; FIgroup2males];
 FIgroup1females = [FISelene];
 FIgroup2females = [FIMeg];
 FIfemales = [FIgroup1females; FIgroup2females];
-
-FIgroup1females = [FIgroup2females; FIgroup2females];
-FIgroup1males = [FIgroup2males; FIgroup2males];
 
 FIgroup1 = [FIgroup1females; FIgroup1males];
 FIgroup2 = [FIgroup2females; FIgroup2males];
@@ -86,8 +82,8 @@ IVgroup2 = [IVgroup2females; IVgroup2males];
 %' operator.
 
 %% Graphing. just change the field up below.
-toGraph = IVfemales;
-name = 'IVFemales';
+toGraph = FIgroup1females;
+name = 'FIgroup1females';
 xAxis = -50:10:90;
 %going through each cell#
 %graph each vector perpendicular to the xz plane
