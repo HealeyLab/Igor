@@ -5,13 +5,23 @@
 Menu "Curves"
 	"Run cStep Analysis", driver_batch()
 	"Display Firing Rates", DisplayFR()
-	"Ooh, Killem", Killem()
+	"Spit out SSV", SpitOutSSV()
+end
+Function SpitOutSSV()//to be used for comparing algorithms for finding ssv
+	String sublist = WaveList("*Cell*" + "*pa*", "\r", "")//includes all cells b/c of the *pa*
+	variable ic
+	for(ic = 10; ic < 30; ic+=1) //itemsInList(sublist, "\r")
+		String name = StringFromList(ic, sublist, "\r")
+		variable ssv = findSSV($name)
+		variable ssv2 = findSSV2($name)
+		print "old ssv algo: " + num2str(ssv) + "\tnew ssv algo: " + num2str(ssv2) + "\t" + stringfromList(ic, sublist, "\r")
+		print "\r\r"
+	endfor
 end
 Function DisplayFR()
 	String sublist = WaveList("*Cell*" + "*pa*", "\r", "")//includes all cells b/c of the *pa*
-	print "sublist:\r" +  sublist
 	variable ic
-	for(ic = 10; ic < 13; ic+=1) //itemsInList(sublist, "\r")
+	for(ic = 26; ic < 31; ic+=1) //itemsInList(sublist, "\r")
 		String name = StringFromList(ic, sublist, "\r")
 		variable currInj = mod(ic, 15)*10 - 50
 		variable spikes = FI(num2str(currInj), $name)
@@ -23,14 +33,7 @@ Function DisplayFR()
 		print "no waves found"
 	endif
 end
-Function Killem()
-	String sublist = WaveList("*Cell*" + "*pa*", "\r", "")//includes all cells b/c of the *pa*
-	variable ic
-	for(ic = 0; ic<ItemsInList(sublist, "\r"); ic += 1)
-		String curr = ("root:'" + StringFromList(ic, sublist, "\r") + "'")//StringFromList(ic, sublist, "\r")
-		KillWindow $curr
-	endfor
-end
+
 Function driver_batch()// use of *_batch here will allow us to use preexisting code for running script on all waves in experiment file
 	//for spont, do something like below for stepDataAnalysis()
 	Make /D /O /N=(0,15, 1) IVCurves//dim=0: Cell number	 dim=1: IV	 dim=2: .r
@@ -38,15 +41,12 @@ Function driver_batch()// use of *_batch here will allow us to use preexisting c
 	
 	variable NUMBER_OF_TRIALS, numOfCells
 	String nameOfExperiment
-	Prompt numOfCells "Enter number of cells"
+	Prompt numOfCells "Enter number of cells (as in, the maximum cell number accounted for)"
 	Prompt NUMBER_OF_TRIALS "Enter number of trials"
 	Prompt nameOfExperiment "Enter the date this experiment was undertaken (for exporting purporses)"
 	DoPrompt "Cells, trials, name of experiment", numOfCells, NUMBER_OF_TRIALS, nameOfExperiment
 	variable i
 	String expNumber
-	print "IV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\t\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
-	print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
-	print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
 	
 	for(i = 1; i <= NUMBER_OF_TRIALS; i+=1)
 		expNumber = ".r" + num2str(i)
@@ -59,22 +59,15 @@ Function driver_batch()// use of *_batch here will allow us to use preexisting c
 			stepDataAnalysis(IVCurves, FICurves, expNumber, numOfCells) // ,.r2, .r3
 		else
 			//don't add to third dimension first time, that's been taken care of
-			stepDataAnalysis(IVCurves, FICurves, "", numOfCells)//since it is not.r1, its just blank 
+			stepDataAnalysis(IVCurves, FICurves, expNumber, numOfCells)//since it is not.r1, its just blank 
 		endif
 		
 	endfor
-	print "***********************&&&&&&\r\tIV DIM 0: " + num2str(DimSize(IVCurves, 0)) + "\tFI DIM 0: " + num2str(DimSize(FICurves, 0))
-	print "IV DIM 1: " + num2str(DimSize(IVCurves, 1)) + "\t\tFI DIM 1: " + num2str(DimSize(FICurves, 1))
-	print "IV DIM 2: " + num2str(DimSize(IVCurves, 2)) + "\t\tFI DIM 2: " + num2str(DimSize(FICurves, 2))
-
-	NewPath/O export_to_matlab "C:Users:danieljonathan:Desktop:Healey data pipeline (finished product):igor_ibws" 
-	Save/C/O/P=export_to_matlab FICurves as nameOfExperiment + "FICurves.ibw"
-	Save/C/O/P=export_to_matlab IVCurves as nameOfExperiment + "IVCurves.ibw"
-	//NewPath/O export_to_matlab "C:Users:danieljonathan:Desktop:Healey:analyzed_files"
-	//for(i = 0; i < numOfCells; i+=1)
-	//	DisplayCurves(IVCurves, i,1)
-	//	DisplayCurves(FICurves, i,2)
-	//endfor
+	
+	//NewPath/O export_to_matlab "C:Users:danieljonathan:Desktop:Healey data pipeline (finished product):igor_ibws" 
+	//Save/C/O/P=export_to_matlab FICurves as nameOfExperiment + "FICurves.ibw"
+	//Save/C/O/P=export_to_matlab IVCurves as nameOfExperiment + "IVCurves.ibw"
+	
 end
 //***************************************************************************************************************************
 Function stepDataAnalysis(IVCurves, FICurves, expNumber, numOfCells)
@@ -285,3 +278,28 @@ Function/D findSSV(w)
 
 end
 //**************************************************************
+Function/D findSSV2(w)
+       wave w
+       Make/O/D/N=1 output
+       variable i, std, avg
+       WaveStats/Q/R=(3, 3.5) w
+	avg = V_avg
+	std = V_sdev
+	print "new algo std: " + num2str(std)
+	print "new algo avg: " + num2str(avg)
+	
+	variable startTrial = x2pnt(w, 3)
+	variable endTrial = x2pnt(w, 3.5)
+	Make/O/D/N=0 destWave
+	findLevels/DEST=leveledWave/R=(3, 3.5)/M=(x2pnt(w, .010))/Q w std * .75
+	variable leveledWaveCount = 0
+	for(i = startTrial; i < endTrial; i+=1)
+		if(w[i] < avg + std || w[i] > avg - std)
+			InsertPoints numpnts(output), 1, destWave
+			output[numpnts(output) - 1] = w[i]
+		endif
+	endfor
+       
+       return mean(output)
+
+end

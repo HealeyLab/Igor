@@ -2,7 +2,7 @@
 %Script to organize workspace into appropriate quadrants
 %%
 clear all
-%close all
+close all
 %%
 %FI
 FIMeg = IBWread('8.24.15FICurves.ibw');
@@ -81,25 +81,31 @@ IVgroup2 = [IVgroup2females; IVgroup2males];
 %use are sideways. So in the partition below, I will correct this with the
 %' operator.
 
-%% Graphing. just change the field up below.
-toGraph = FIgroup1females;
-name = 'FIgroup1females';
+%% Graphing. Just change the first TWO fields below.
+toGraph = IVfemales;
+name = 'IVfemales';
 xAxis = -50:10:90;
 %going through each cell#
 %graph each vector perpendicular to the xz plane
 
-figure; plot(xAxis, mean(toGraph, 3)', 'LineWidth', 1.25)
+toGraph = mean(toGraph, 3);
+figure; 
+handle = plot(xAxis, toGraph, 'LineWidth', 1.25);
 hold on;
 title(name);
 ax = gca;
 ax.XTick = -50:10:90;
 ax.XTickLabelRotation = 45;
+legend(handle, num2str((1:numel(toGraph(:,1,1)))'),'Location', 'Best');
 if(strfind(name, 'IV') ~= 0)
     ylabel('mV')
     xlabel('pA')
     ax.YTick = -1.2:0.01:0;
     ylim([-.12, 0])
-elseif(strfind(name, 'IV') ~= 0)
+    sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));%not sure if 2 is the right dimension here
+    toGraph = mean(toGraph);%changing toGraph further, compressing it to one row
+    errorbar(xAxis, toGraph, sem, 'color', 'b');
+elseif(strfind(name, 'FI') ~= 0)
     ylabel('Hz')
     xlabel('pa')
 end
