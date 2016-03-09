@@ -20,6 +20,7 @@ FIOpus = FIOpus(1:end/2, :, :);%because it doubles it for some reason
 FIMname = IBWread('9.2.15FICurves.ibw');
 FIMname = FIMname.y;
 FIMname = FIMname(1:end/2, :, :);%because it doubles it for some reason
+FIMname(4,:,:) = 0;
 
 FILincoln = IBWread('9.3.15FICurves.ibw');
 FILincoln = FILincoln.y;
@@ -57,6 +58,7 @@ IVOpus = IVOpus(1:end/2, :, :);%because it doubles it for some reason
 IVMname = IBWread('9.2.15IVCurves.ibw');
 IVMname = IVMname.y;
 IVMname = IVMname(1:end/2, :, :);%because it doubles it for some reason
+IVMname(4,:,:) = 0;%EXCISING BAD DATA, will turn to Nan's later
 
 IVLincoln = IBWread('9.3.15IVCurves.ibw');
 IVLincoln = IVLincoln.y;
@@ -64,7 +66,7 @@ IVLincoln = IVLincoln(1:end/2, :, :);%because it doubles it for some reason
 
 IVSelene = IBWread('9.1.15IVCurves.ibw');
 IVSelene = cat(3, IVSelene.y, zeros(8,15));
-%IVSelene = IVSelene(1:end/2, :, :);%because it doubles it for some reason
+IVSelene = IVSelene(1:end/2, :, :);%because it doesnt double it for some reason
 
 IVgroup1males = [IVBeethoven; IVOpus];
 IVgroup2males = [IVMname; IVLincoln];
@@ -80,15 +82,19 @@ IVgroup2 = [IVgroup2females; IVgroup2males];
 %I concatenated the matrices vertically. Right now, the vectors I want to
 %use are sideways. So in the partition below, I will correct this with the
 %' operator.
+%% Graphing. Just change the FOUR fields noted below.
+temp = IVMname;%%CHANGE HERE
+toGraph = temp;%b/c we need to reset it at some point
+name = 'IVMname';%%CHANGE HERE
 
-%% Graphing. Just change the first TWO fields below.
-toGraph = IVfemales;
-name = 'IVfemales';
+toGraph2 = IVmales;%%CHANGE HERE
+name2 = 'Males and females IV';%%CHANGE HERE
+
 xAxis = -50:10:90;
-%going through each cell#
-%graph each vector perpendicular to the xz plane
 
 toGraph = mean(toGraph, 3);
+toGraph2 = mean(toGraph2, 3);
+
 figure; 
 handle = plot(xAxis, toGraph, 'LineWidth', 1.25);
 hold on;
@@ -97,17 +103,53 @@ ax = gca;
 ax.XTick = -50:10:90;
 ax.XTickLabelRotation = 45;
 legend(handle, num2str((1:numel(toGraph(:,1,1)))'),'Location', 'Best');
+
 if(strfind(name, 'IV') ~= 0)
     ylabel('mV')
     xlabel('pA')
     ax.YTick = -1.2:0.01:0;
     ylim([-.12, 0])
-    sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));%not sure if 2 is the right dimension here
-    toGraph = mean(toGraph);%changing toGraph further, compressing it to one row
+    sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));
+    toGraph = mean(toGraph(~all(toGraph==0,2),:));%changing toGraph further, compressing it to one row
     errorbar(xAxis, toGraph, sem, 'color', 'b');
 elseif(strfind(name, 'FI') ~= 0)
     ylabel('Hz')
     xlabel('pa')
+    ax.YTick = 0:18;
+    ylim([0, 18])
+    sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));
+    toGraph = mean(toGraph(~all(toGraph==0,2),:));%changing toGraph further, compressing it to one row
+    errorbar(xAxis, toGraph, sem, 'color', 'b');
 end
 savefig(strcat(name, '.fig'));
+
+%reset toGraph
+toGraph = mean(temp, 3);
+
+figure;
+hold on;
+title(name2);
+if(strfind(name, 'IV') ~= 0)
+    ylabel('mV')%
+    xlabel('pA')%
+    ax.YTick = -1.2:0.01:0;%
+    ylim([-.12, 0])%
+    sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));
+    sem2 = std(toGraph2)/sqrt(length(toGraph2(:,1,1)));   
+    toGraph = mean(toGraph(~all(toGraph==0,2),:));%making toGraph one row
+    toGraph2 = mean(toGraph2(~all(toGraph2==0,2),:));
+    errorbar(xAxis, toGraph, sem, 'color', 'b');%now xAxis, toGraph, and sem are all same size
+    errorbar(xAxis, toGraph2, sem2, 'color', 'b');
+elseif(strfind(name, 'FI') ~= 0)
+    ylabel('Hz')
+    xlabel('pa')
+    ax.YTick = 0:18;
+    ylim([0, 18])
+    sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));
+    sem2 = std(toGraph2)/sqrt(length(toGraph2(:,1,1)));   
+    toGraph = mean(toGraph(~all(toGraph==0,2),:));
+    toGraph2 = mean(toGraph2(~all(toGraph2==0,2),:));
+    errorbar(xAxis, toGraph, sem, 'color', 'b');
+    errorbar(xAxis, toGraph2, sem2, 'color', 'b');
+end
 
