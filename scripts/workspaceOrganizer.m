@@ -96,7 +96,7 @@ toGraph = mean(toGraph, 3);
 toGraph2 = mean(toGraph2, 3);
 
 figure; 
-handle = plot(xAxis, toGraph, 'LineWidth', 1.25);
+handle = plot(xAxis, toGraph(~all(toGraph==0,2),:), 'LineWidth', 1.25);
 hold on;
 title(name);
 ax = gca;
