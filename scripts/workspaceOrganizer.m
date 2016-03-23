@@ -3,6 +3,7 @@
 %%
 clear all
 close all
+
 %%
 %FI
 FIMeg = IBWread('8.24.15FICurves.ibw');
@@ -83,20 +84,24 @@ IVgroup2 = [IVgroup2females; IVgroup2males];
 %use are sideways. So in the partition below, I will correct this with the
 %' operator.
 %% Graphing. Just change the FOUR fields noted below.
-temp = IVMname;%%CHANGE HERE
-toGraph = temp;%b/c we need to reset it at some point
-name = 'IVMname';%%CHANGE HERE
+%Note: passive properties are usually resistance, and that is iv
+temp = IVgroup1;%%CHANGE HERE 1
+name = 'IVgroup1';%%CHANGE HERE 2
+toGraph2 = IVgroup2;%%CHANGE HERE 3
+name2 = 'IV group1 and group2';%%CHANGE HERE 4
+OTHER = 'IV group 2';%%CHANGEHERE 5
 
-toGraph2 = IVmales;%%CHANGE HERE
-name2 = 'Males and females IV';%%CHANGE HERE
+toGraph = temp;%b/c we need to reset it at some point
 
 xAxis = -50:10:90;
-
 toGraph = mean(toGraph, 3);
 toGraph2 = mean(toGraph2, 3);
+%I still cant excise zero vectors
+% toGraph = toGraph(~all(toGraph==0,1));
+% toGraph2 = toGraph2(~all(toGraph2==0,1),:);
 
-figure; 
-handle = plot(xAxis, toGraph(~all(toGraph==0,2),:), 'LineWidth', 1.25);
+figure;
+handle = plot(xAxis, toGraph', 'LineWidth', 1.25);
 hold on;
 title(name);
 ax = gca;
@@ -113,13 +118,26 @@ if(strfind(name, 'IV') ~= 0)
     toGraph = mean(toGraph(~all(toGraph==0,2),:));%changing toGraph further, compressing it to one row
     errorbar(xAxis, toGraph, sem, 'color', 'b');
 elseif(strfind(name, 'FI') ~= 0)
+    %plain old FI curves
     ylabel('Hz')
     xlabel('pa')
     ax.YTick = 0:18;
     ylim([0, 18])
     sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));
-    toGraph = mean(toGraph(~all(toGraph==0,2),:));%changing toGraph further, compressing it to one row
+    toGraph = mean(toGraph);%changing toGraph further, compressing it to one row
     errorbar(xAxis, toGraph, sem, 'color', 'b');
+    
+    %FI curve slopes in bar graph
+    toGraph = temp;
+    toGraph = mean(toGraph, 3);
+    
+    aMs = max(toGraph, [], 2);%./baseline;
+    aMs2 = max(toGraph2, [], 2);%./baseline2;
+    figure;
+    plotSpread({aMs, aMs2},'xNames', {name, OTHER},'distributionMarkers', {'o','x'}, 'distributionColors',{'b','r'})
+
+    xlim([0, 3])
+    ax.XTick = 1:1:2;
 end
 savefig(strcat(name, '.fig'));
 
@@ -138,7 +156,7 @@ if(strfind(name, 'IV') ~= 0)
     sem2 = std(toGraph2)/sqrt(length(toGraph2(:,1,1)));   
     toGraph = mean(toGraph(~all(toGraph==0,2),:));%making toGraph one row
     toGraph2 = mean(toGraph2(~all(toGraph2==0,2),:));
-    errorbar(xAxis, toGraph, sem, 'color', 'b');%now xAxis, toGraph, and sem are all same size
+    errorbar(xAxis, toGraph, sem, 'color', 'r');%now xAxis, toGraph, and sem are all same size
     errorbar(xAxis, toGraph2, sem2, 'color', 'b');
 elseif(strfind(name, 'FI') ~= 0)
     ylabel('Hz')
@@ -149,7 +167,6 @@ elseif(strfind(name, 'FI') ~= 0)
     sem2 = std(toGraph2)/sqrt(length(toGraph2(:,1,1)));   
     toGraph = mean(toGraph(~all(toGraph==0,2),:));
     toGraph2 = mean(toGraph2(~all(toGraph2==0,2),:));
-    errorbar(xAxis, toGraph, sem, 'color', 'b');
+    errorbar(xAxis, toGraph, sem, 'color', 'r'); %females
     errorbar(xAxis, toGraph2, sem2, 'color', 'b');
 end
-
