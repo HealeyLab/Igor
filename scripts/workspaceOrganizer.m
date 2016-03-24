@@ -85,11 +85,11 @@ IVgroup2 = [IVgroup2females; IVgroup2males];
 %' operator.
 %% Graphing. Just change the FOUR fields noted below.
 %Note: passive properties are usually resistance, and that is iv
-temp = IVgroup1;%%CHANGE HERE 1
-name = 'IVgroup1';%%CHANGE HERE 2
-toGraph2 = IVgroup2;%%CHANGE HERE 3
-name2 = 'IV group1 and group2';%%CHANGE HERE 4
-OTHER = 'IV group 2';%%CHANGEHERE 5
+temp = FIgroup1;%%CHANGE HERE 1
+name = 'FIgroup1';%%CHANGE HERE 2
+toGraph2 = FIgroup2;%%CHANGE HERE 3
+name2 = 'FI group1 and group2';%%CHANGE HERE 4
+OTHER = 'FI group 2';%%CHANGE HERE 5
 
 toGraph = temp;%b/c we need to reset it at some point
 
@@ -127,12 +127,16 @@ elseif(strfind(name, 'FI') ~= 0)
     toGraph = mean(toGraph);%changing toGraph further, compressing it to one row
     errorbar(xAxis, toGraph, sem, 'color', 'b');
     
-    %FI curve slopes in bar graph
+    %FI curve slopes in bar graph%m = (y2 - y1)/(x2 - x1)
     toGraph = temp;
     toGraph = mean(toGraph, 3);
     
-    aMs = max(toGraph, [], 2);%./baseline;
-    aMs2 = max(toGraph2, [], 2);%./baseline2;
+    [maxi, I] = max(toGraph, [], 2);%1 2 3 4 -> -5, -4, -3,-2,-1-> -50, -40, -30, -20, -10
+    [maxi2, I2] = max(toGraph2, [], 2);
+    I = (I-6)*10; %array of indices
+    I2 = (I2-6)*10;
+    aMs = (maxi - 0)./(I-toGraph(find(toGraph, 1)));%./baseline;
+    aMs2 = (maxi2-0)./(I2-toGraph2(find(toGraph2, 1)));%./baseline2;
     figure;
     plotSpread({aMs, aMs2},'xNames', {name, OTHER},'distributionMarkers', {'o','x'}, 'distributionColors',{'b','r'})
 
