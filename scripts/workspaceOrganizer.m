@@ -96,9 +96,11 @@ toGraph = temp;%b/c we need to reset it at some point
 xAxis = -50:10:90;
 toGraph = mean(toGraph, 3);
 toGraph2 = mean(toGraph2, 3);
-%I still cant excise zero vectors
-% toGraph = toGraph(~all(toGraph==0,1));
-% toGraph2 = toGraph2(~all(toGraph2==0,1),:);
+%excising zero rows
+toGraph
+toGraph( ~any(toGraph,2), : ) = []
+toGraph2
+toGraph2( ~any(toGraph2,2), : ) = []
 
 figure;
 handle = plot(xAxis, toGraph', 'LineWidth', 1.25);
@@ -115,7 +117,7 @@ if(strfind(name, 'IV') ~= 0)
     ax.YTick = -1.2:0.01:0;
     ylim([-.12, 0])
     sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));
-    toGraph = mean(toGraph(~all(toGraph==0,2),:));%changing toGraph further, compressing it to one row
+    toGraph = mean(toGraph(~all(toGraph==0,2),:));%changing toGraph further, compressing it to one row from two dimensions
     errorbar(xAxis, toGraph, sem, 'color', 'b');
 elseif(strfind(name, 'FI') ~= 0)
     %plain old FI curves
@@ -147,6 +149,9 @@ savefig(strcat(name, '.fig'));
 
 %reset toGraph
 toGraph = mean(temp, 3);
+
+excel1 = toGraph;
+excel2 = toGraph2;
 
 figure;
 hold on;
