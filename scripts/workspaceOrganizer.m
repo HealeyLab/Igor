@@ -86,10 +86,10 @@ IVgroup2 = [IVgroup2females; IVgroup2males];
 %% Graphing. Just change the FOUR fields noted below.
 %Note: passive properties are usually resistance, and that is iv
 temp = FIgroup1;%%CHANGE HERE 1
-name = 'FIgroup1';%%CHANGE HERE 2
-toGraph2 = FIgroup2;%%CHANGE HERE 3
-name2 = 'FI group1 and group2';%%CHANGE HERE 4
-OTHER = 'FI group 2';%%CHANGE HERE 5
+toGraph2 = FIgroup2;%%CHANGE HERE 2
+name = 'FIgroup1';%%CHANGE HERE 3
+name2 = 'FIgroup2';%%CHANGE HERE 4
+bothNames = strcat(name, 'and', name2);
 
 toGraph = temp;%b/c we need to reset it at some point
 
@@ -97,10 +97,10 @@ xAxis = -50:10:90;
 toGraph = mean(toGraph, 3);
 toGraph2 = mean(toGraph2, 3);
 %excising zero rows
-toGraph
-toGraph( ~any(toGraph,2), : ) = []
-toGraph2
-toGraph2( ~any(toGraph2,2), : ) = []
+%toGraph
+toGraph( ~any(toGraph,2), : ) = [];
+%toGraph2
+toGraph2( ~any(toGraph2,2), : ) = [];
 
 figure;
 handle = plot(xAxis, toGraph', 'LineWidth', 1.25);
@@ -117,10 +117,11 @@ if(strfind(name, 'IV') ~= 0)
     ax.YTick = -1.2:0.01:0;
     ylim([-.12, 0])
     sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));
-    toGraph = mean(toGraph(~all(toGraph==0,2),:));%changing toGraph further, compressing it to one row from two dimensions
+    toGraph = mean(toGraph(~all(toGraph==0,2),:)); % changing toGraph further, compressing it to one row from two dimensions
     errorbar(xAxis, toGraph, sem, 'color', 'b');
+    savefig(strcat(name, 'WithErrorBars.fig'));
 elseif(strfind(name, 'FI') ~= 0)
-    %plain old FI curves
+    % plain old FI curves
     ylabel('Hz')
     xlabel('pa')
     ax.YTick = 0:18;
@@ -128,24 +129,25 @@ elseif(strfind(name, 'FI') ~= 0)
     sem = std(toGraph)/sqrt(length(toGraph(:,1,1)));
     toGraph = mean(toGraph);%changing toGraph further, compressing it to one row
     errorbar(xAxis, toGraph, sem, 'color', 'b');
-    
+    savefig(strcat(name, 'WithErrorBars.fig'));
+
     %FI curve slopes in bar graph%m = (y2 - y1)/(x2 - x1)
     toGraph = temp;
     toGraph = mean(toGraph, 3);
     
-    [maxi, I] = max(toGraph, [], 2);%1 2 3 4 -> -5, -4, -3,-2,-1-> -50, -40, -30, -20, -10
+    [maxi, I] = max(toGraph, [], 2); % 1 2 3 4 -> -5, -4, -3,-2,-1-> -50, -40, -30, -20, -10
     [maxi2, I2] = max(toGraph2, [], 2);
-    I = (I-6)*10; %array of indices
+    I = (I-6)*10; % array of indices
     I2 = (I2-6)*10;
-    aMs = (maxi - 0)./(I-toGraph(find(toGraph, 1)));%./baseline;
-    aMs2 = (maxi2-0)./(I2-toGraph2(find(toGraph2, 1)));%./baseline2;
+    aMs = (maxi - 0)./(I-toGraph(find(toGraph, 1)));
+    aMs2 = (maxi2 - 0)./(I2-toGraph2(find(toGraph2, 1)));
     figure;
-    plotSpread({aMs, aMs2},'xNames', {name, OTHER},'distributionMarkers', {'o','x'}, 'distributionColors',{'b','r'})
-
+    plotSpread({aMs, aMs2},'xNames', {name, name2},'distributionMarkers', {'o','x'}, 'distributionColors',{'b','r'})
+    title(strcat(bothNames, ' FI slopes'))
     xlim([0, 3])
     ax.XTick = 1:1:2;
+    savefig(strcat(bothNames, 'FISlopeBeeswarm.fig'));
 end
-savefig(strcat(name, '.fig'));
 
 %reset toGraph
 toGraph = mean(temp, 3);
@@ -155,7 +157,7 @@ excel2 = toGraph2;
 
 figure;
 hold on;
-title(name2);
+title(bothNames);
 if(strfind(name, 'IV') ~= 0)
     ylabel('mV')%
     xlabel('pA')%
@@ -167,6 +169,7 @@ if(strfind(name, 'IV') ~= 0)
     toGraph2 = mean(toGraph2(~all(toGraph2==0,2),:));
     errorbar(xAxis, toGraph, sem, 'color', 'r');%now xAxis, toGraph, and sem are all same size
     errorbar(xAxis, toGraph2, sem2, 'color', 'b');
+    savefig(strcat(bothNames, 'OnlyErrorBar.fig'));
 elseif(strfind(name, 'FI') ~= 0)
     ylabel('Hz')
     xlabel('pa')
@@ -178,4 +181,6 @@ elseif(strfind(name, 'FI') ~= 0)
     toGraph2 = mean(toGraph2(~all(toGraph2==0,2),:));
     errorbar(xAxis, toGraph, sem, 'color', 'r'); %females
     errorbar(xAxis, toGraph2, sem2, 'color', 'b');
+    savefig(strcat(bothNames, 'OnlyErrorBar.fig'));
+
 end
