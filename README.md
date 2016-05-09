@@ -7,7 +7,8 @@
 <ul><li>Input the date on which the experiment was performed using the given format</li>
 <li>Make sure the bottom one has RenameWaves selected in the dropdown menu</li>
 <li>Hit continue</li></ul>
-<li>Run Driver.ipf by selecting Curves->Run cStep Analysis(NOTE: you will want to change the path it saves to. Search "NewPath/O" to get to the right line and change the Path accordingly, again using the format provided. You may want to make it the same directory where you have the scripts folder from the .zip, since you will need it there later for matlab.)</li>
+<li>Run Driver.ipf by selecting Curves->Run cStep Analysis</li>
+<ul><li>(NOTE: you will want to change the path it saves to. Search "NewPath/O" to get to the right line and change the Path accordingly, again using the format provided. You may want to make it the same directory where you have the scripts folder from the .zip, since you will need it there later for matlab).</li></ul>
 <li>Congratulations! You have analyzed one packed experiment file (.pxp).</li>
 <li>Now open Matlab and change the working directory to the scripts folder from the .zip. You are now free to edit the Matlab script as you please to visualize your FI and IV data</li></ol>
 
