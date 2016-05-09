@@ -3,6 +3,8 @@
 <h0>Copyright © 2009, Jakub Bialek
 All rights reserved.
 
+Many thanks to Geng-Lin Li, who provided the base code for Do It All Waves.ipf and RenameWaves.ipf.
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
