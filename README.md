@@ -1,5 +1,5 @@
 # Igor
-<link rel="stylesheet" type="text/css" href="readme.css"><!-- Have not made this file yet -->
+<link rel="stylesheet" type="text/css" href="readme.css">
 <h2>How to use this repo</h2>
 <h3>Important: This project uses traces obtained from a HEKA amplifier protocol which takes <strong>15</strong> current injection traces from patch clamp configurations, going from <strong>-50 pA</strong> to <strong>90 pA</strong>, at intervals of <strong>10 pA</strong>. Importantly, these traces must each be 6.5 seconds long, in the following format:
 <br>
