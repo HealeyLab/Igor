@@ -23,7 +23,7 @@
 
 <ol>
   <li>Load PULSE/PM file into your Igor environment using the Patcher's Power Tools package available online</li>
-  ![Igor Patcher's Power Tools menu](https://github.com/zeebie15/Igor/edit/PPTMenu.jpg)
+  <!-- ![Igor Patcher's Power Tools menu](https://github.com/zeebie15/Igor/edit/PPTMenu.jpg) -->
   <ul>
     <li>Find your .dat file using the top toolbar.</li>
     <li>Only select one HEKA stimulus/protocol, the one corresponding to <strong>current steps</strong>, if there is more than one (highlighted in blue)</li>
@@ -56,7 +56,7 @@
 <br>
 <ol>
   <li>Load PULSE/PM file into your Igor environment using the Patcher's Power Tools package available online</li>
-  ![Igor Patcher's Power Tools menu](hamdanspam.github.com/zeebie15/Igor/edit/PPTMenu.jpg)
+  <!-- ![Igor Patcher's Power Tools menu](hamdanspam.github.com/zeebie15/Igor/edit/PPTMenu.jpg) -->
   <ul>
     <li>Find your .dat file using the top toolbar.</li>
     <li>Only select one HEKA stimulus/protocol, the one corresponding to <strong>60 s spontaneous recordings</strong>, if there is more than one (highlighted in blue)</li>
@@ -78,13 +78,16 @@
     <li>This should eventually open up statsWave and indexWave.</li>
   </ul>
 </ol>
-
-<p>Many thanks to Jakub Bialek for the use of his library.</p>
-<h0>Copyright © 2009, Jakub Bialek
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<p style="font-size":5px>Many thanks to Geng-Lin Li, who provided the code for Do It All Waves.ipf and RenameWaves.ipf.</p>
+<p style="font-size":5px>Many thanks to Jakub Bialek for the use of his library. Copyright © 2009, Jakub Bialek
 All rights reserved.
-
-Many thanks to Geng-Lin Li, who provided the code for Do It All Waves.ipf and RenameWaves.ipf.
-
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
@@ -105,4 +108,4 @@ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.</h0>
+POSSIBILITY OF SUCH DAMAGE.</p>
