@@ -23,7 +23,7 @@
 
 <ol>
   <li>Load PULSE/PM file into your Igor environment using the Patcher's Power Tools package available online</li>
-  <p>![Igor Patcher's Power Tools menu](https://github.com/zeebie15/Igor/edit/PPTMenu.jpg)</p>
+  ![Igor Patcher's Power Tools menu](https://github.com/zeebie15/Igor/edit/PPTMenu.jpg)
   <ul>
     <li>Find your .dat file using the top toolbar.</li>
     <li>Only select one HEKA stimulus/protocol, the one corresponding to <strong>current steps</strong>, if there is more than one (highlighted in blue)</li>
@@ -56,7 +56,7 @@
 <br>
 <ol>
   <li>Load PULSE/PM file into your Igor environment using the Patcher's Power Tools package available online</li>
-  <p>![Igor Patcher's Power Tools menu](https://github.com/zeebie15/Igor/edit/PPTMenu.jpg)</p>
+  ![Igor Patcher's Power Tools menu](hamdanspam.github.com/zeebie15/Igor/edit/PPTMenu.jpg)
   <ul>
     <li>Find your .dat file using the top toolbar.</li>
     <li>Only select one HEKA stimulus/protocol, the one corresponding to <strong>60 s spontaneous recordings</strong>, if there is more than one (highlighted in blue)</li>
