@@ -1,8 +1,9 @@
-# Igor
 <link rel="stylesheet" type="text/css" href="readme.css">
-<h2>How to use this repo</h2>
-<h3>Important: This project uses traces obtained from a HEKA amplifier protocol which takes <strong>15</strong> current injection traces from patch clamp configurations, going from <strong>-50 pA</strong> to <strong>90 pA</strong>, at intervals of <strong>10 pA</strong>. Importantly, these traces must each be <strong>6.5</strong> seconds long, in the following format:
-<br>
+<title>Igor</title>
+
+<header>How to use this repo</header>
+<h1>For analyzing current step data</h1>
+<p>Important: This project uses traces obtained from a HEKA amplifier protocol which takes <strong>15</strong> current injection traces from patch clamp configurations, going from <strong>-50 pA</strong> to <strong>90 pA</strong>, at intervals of <strong>10 pA</strong>. Importantly, these traces must each be <strong>6.5</strong> seconds long, in the following format:</p>
 <table style="width:100%">
   <tr>
     <td>3s</td>
@@ -20,9 +21,8 @@
     <td>spontaneous</td>
   </tr>
 </table>
+<br>
 
-
-</h3>
 <ol><li>Load PULSE/PM file into your Igor environment using the Patcher's Power Tools package available online</li>
 <li>Open and compile Do It All Waves.ipf, Renamewaves.ipf, and Driver.ipf</li>
 <li>Run the procedure Do It All.ipf by selecting GL->Do It All Waves</li>
