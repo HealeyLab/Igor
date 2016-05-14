@@ -85,8 +85,8 @@
 <br>
 <br>
 <br>
-<p style="font-size":5px>Many thanks to Geng-Lin Li, who provided the code for Do It All Waves.ipf and RenameWaves.ipf.</p>
-<p style="font-size":5px>Many thanks to Jakub Bialek for the use of his library. Copyright © 2009, Jakub Bialek
+<p style="font-size":"1">Many thanks to Geng-Lin Li, who provided the code for Do It All Waves.ipf and RenameWaves.ipf.</p>
+<p style="font-size":"1">Many thanks to Jakub Bialek for the use of his library. Copyright © 2009, Jakub Bialek
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
