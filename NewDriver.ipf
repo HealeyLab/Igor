@@ -8,7 +8,7 @@ Function AllWave()
 	
 	String SpontWave
 	String cStepWave
-	Variable level=root:level
+	Variable level
 	
 	
 	Make/O/N=(1,16) statsWave //goes in driver
@@ -62,20 +62,15 @@ Function AllWave()
 	String SpontWaveList= WaveList("*Spont*", "\r","") // WaveList(spont, "\r","")
 	String cStepWaveList = WaveList("*pa*", "\r","") // WaveList(cstep, "\r","")
 	
-	print SpontWaveList
-	
 	Variable row = 0
 	Variable i
 	for (i = 0; i<itemsinlist(Spontwavelist,"\r"); i+=1)
-
 		row +=1
 		insertpoints row, 1, indexWave
 		Wave current= $StringfromList(i, SpontWaveList, "\r")
 		indexWave[row][0]=nameofwave(current)
-		//Stats(current, row)//-0.030) // spontspikeanalysis(current, -0.030)
-		if(i == 3)
-			Stats(current, row)
-		endif
+		spontspikeanalysis(current, level)
+		Stats(current, row)
 		Insertpoints  (numpnts(statswave)-2),1, statsWave	
 	endfor
 	
@@ -101,10 +96,8 @@ Function Stats(w,row)
 
 	Wave w
 	Variable row
-	Wave statswave=root:statswave
 	
-	spontspikeAnalysis(w, root:level)
-	
+	Wave statswave=root:statswave	
 	Wave spikepeaks= root:spikepeaks
 	Wave spiketimes= root:spiketimes
 	Wave spikeamps =root:spikeamps
@@ -121,42 +114,54 @@ Function Stats(w,row)
 	Variable column = 1
 
 	//spike amplitude (1)
-	Wavestats/Q spikeamps
+	if(numpnts(spikeamps) > 0)
+		Wavestats/Q spikeamps
+	endif
 	statsWave[row][column]=V_avg
 	column+=1
 	statsWave[row][column]=V_sdev //(2)
 	column+=1
 	
 	//spike threshold (3)
-	Wavestats/Q  values
+	if(numpnts(spikeamps) > 0)
+		Wavestats/Q  values
+	endif
 	statsWave[row][column]=V_avg
 	column+=1
 	statsWave[row][column]=V_sdev //(4)
 	column+=1
 	
 	//half widths (5)
-	Wavestats/Q  halfwidthpointsAllvalues
+	if(numpnts(spikeamps) > 0)
+		Wavestats/Q  halfwidthpointsAllvalues
+	endif
 	statsWave[row][column]=V_avg//NaN
 	column+=1
 	statsWave[row][column]=V_sdev//NaN //(6)
 	column+=1
 	
 	//AHP amplitude (7)
-	Wavestats/Q AHPamplitudes
+	if(numpnts(spikeamps) > 0)
+		Wavestats/Q AHPamplitudes
+	endif
 	statsWave[row][column]=V_avg
 	column+=1
 	statsWave[row][column]=V_sdev  //(8)
 	column+=1
 	
 	// AHP duration (9)
-	Wavestats/Q AHPdurations
+	if(numpnts(spikeamps) > 0)
+		Wavestats/Q AHPdurations
+	endif
 	statsWave[row][column]=V_avg
 	column+=1
 	statsWave[row][column]=V_sdev //(10)
 	column+=1
 	
 	//RMP (11)
-	Wavestats/Q RMPwave
+	if(numpnts(spikeamps) > 0)
+		Wavestats/Q RMPwave
+	endif
 	statsWave[row][column]=V_avg//NaN
 	column+=1
 	
