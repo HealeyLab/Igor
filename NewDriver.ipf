@@ -123,13 +123,13 @@ Function Stats(w,row)
 	column+=1
 	
 	//spike threshold (3)
-	if(numpnts(spikeamps) > 0)
-		Wavestats/Q  values
-	endif
-	statsWave[row][column]=V_avg
-	column+=1
-	statsWave[row][column]=V_sdev //(4)
-	column+=1
+	//if(numpnts(spikeamps) > 0)
+	//	Wavestats/Q  values
+	//endif							UNCOMMENT THIS SOON
+	//statsWave[row][column]=V_avg
+	//column+=1
+	//statsWave[row][column]=V_sdev //(4)
+	//column+=1
 	
 	//half widths (5)
 	if(numpnts(spikeamps) > 0)
